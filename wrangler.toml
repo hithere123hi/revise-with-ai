@@ -5,7 +5,7 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "DB"
 database_name = "revise-with-ai-db"
-database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+database_id = "b3b7dcfa-13c2-4225-b871-0d521cd189fe"
 
 [vars]
 GEMINI_MODEL = "gemini-2.5-flash"   # change if Google renames its free Flash model
