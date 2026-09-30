@@ -1,0 +1,17 @@
+name = "revise-with-ai"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "revise-with-ai-db"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"   # change if Google renames its free Flash model
+DAILY_AI_LIMIT = "400"              # AI calls per day; keep under your free-tier daily cap
+MIN_QUALITY = "6"                   # questions scoring below this (out of 10) are rejected
+SUBMITS_PER_HOUR = "10"             # per visitor
+MAX_VARIATIONS = "6"                # per original question
+FLAGS_TO_HIDE = "3"                 # reports before a question is hidden
+# GEMINI_API_KEY and ADMIN_TOKEN are secrets: add them in the Cloudflare dashboard, never here.

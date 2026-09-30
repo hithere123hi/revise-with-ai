@@ -1,0 +1,12 @@
+{
+  "name": "revise-with-ai",
+  "private": true,
+  "description": "Adaptive CAT Quant practice with an AI-judged, self-growing question bank",
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "db:local": "wrangler d1 execute revise-with-ai-db --local --file db/schema.sql && wrangler d1 execute revise-with-ai-db --local --file db/seed.sql",
+    "db:setup": "wrangler d1 execute revise-with-ai-db --remote --file db/schema.sql && wrangler d1 execute revise-with-ai-db --remote --file db/seed.sql",
+    "deploy": "wrangler pages deploy public --project-name revise-with-ai"
+  },
+  "devDependencies": { "wrangler": "^4.144.0" }
+}

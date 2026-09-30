@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Revise with AI: adaptive CAT Arithmetic practice</title>
+<meta name="description" content="Free adaptive CAT Arithmetic practice. Ten difficulty levels, AI-checked questions, and a bank anyone can add to.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F8FB; --grid:#E3EAF4; --sheet:#FFFFFF; --ink:#172B4D; --pencil:#5E6B80; --rule:#D5DEEA;
+  --hl:#FFE047; --hl-ink:#172B4D; --red:#D23B3B; --green:#1E8A5A; --focus:#2F6FEB;
+  --ui:"Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --hand:"Caveat", "Comic Sans MS", cursive;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111827; --grid:#1B2436; --sheet:#172033; --ink:#E7EDF7; --pencil:#9AA7BD; --rule:#2A3650;
+  --hl:#E6C62E; --hl-ink:#111827; --red:#FF6B6B; --green:#4CC38A; --focus:#7AA7FF;}}
+:root[data-theme="dark"]{
+  --paper:#111827; --grid:#1B2436; --sheet:#172033; --ink:#E7EDF7; --pencil:#9AA7BD; --rule:#2A3650;
+  --hl:#E6C62E; --hl-ink:#111827; --red:#FF6B6B; --green:#4CC38A; --focus:#7AA7FF;}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;font-family:var(--ui);color:var(--ink);background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;font-size:17px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wrap{max-width:760px;margin:0 auto;padding:24px 20px 64px}
+[hidden]{display:none!important}
+.sr{position:absolute;left:-9999px}
+
+.mast{padding:18px 0 6px}
+.mast h1{font-size:clamp(2.5rem,9vw,4.2rem);line-height:.95;letter-spacing:-.035em;font-weight:800;margin:0}
+.mast h1 .hl{background:linear-gradient(transparent 58%,var(--hl) 58%,var(--hl) 90%,transparent 90%);padding:0 .08em}
+.mast p{color:var(--pencil);max-width:36em;margin:12px 0 0;font-size:1.05rem}
+.bankline{font-size:.9rem;color:var(--pencil);margin-top:6px}
+
+.tabs{display:flex;gap:4px;margin:26px 0 0;border-bottom:2px solid var(--ink)}
+.tab{all:unset;cursor:pointer;padding:10px 16px;font-weight:700;border:2px solid transparent;border-bottom:none;border-radius:10px 10px 0 0;color:var(--pencil);margin-bottom:-2px}
+.tab[aria-selected="true"]{background:var(--sheet);border-color:var(--ink);color:var(--ink);border-bottom:2px solid var(--sheet)}
+.tab:focus-visible{outline:3px solid var(--focus)}
+.panel{background:var(--sheet);border:2px solid var(--ink);border-top:none;border-radius:0 0 10px 10px;padding:22px}
+@media (max-width:560px){.panel{padding:16px}}
+
+.field{margin:0 0 20px}
+.field > label, .field > .lab{display:block;font-weight:700;margin-bottom:8px}
+.field .hint{font-size:.88rem;color:var(--pencil);margin-top:6px}
+select, textarea, .txt{width:100%;background:var(--sheet);border:2px solid var(--rule);border-radius:10px;padding:11px 12px;font-size:1rem}
+select:focus-visible, textarea:focus-visible, .txt:focus-visible{outline:none;border-color:var(--focus)}
+textarea{min-height:150px;resize:vertical;line-height:1.5}
+
+/* 10-step ruler */
+.ruler{display:grid;grid-template-columns:repeat(10,1fr);border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.ruler button{all:unset;cursor:pointer;text-align:center;padding:10px 0 8px;font-weight:700;border-left:1px solid var(--rule);position:relative}
+.ruler button:first-child{border-left:none}
+.ruler button::before{content:"";position:absolute;left:50%;top:0;width:1.5px;height:6px;background:var(--ink)}
+.ruler button:hover{background:color-mix(in srgb,var(--hl) 25%,transparent)}
+.ruler button[aria-pressed="true"]{background:var(--hl);color:var(--hl-ink)}
+.ruler button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.lvdesc{font-size:.92rem;color:var(--pencil);margin-top:8px;min-height:1.5em}
+
+.seg2{display:inline-flex;border:2px solid var(--ink);border-radius:10px;overflow:hidden}
+.seg2 button{all:unset;cursor:pointer;padding:8px 14px;font-weight:600}
+.seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg2 button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+
+.btn{background:var(--ink);color:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:12px 20px;font-weight:700;cursor:pointer}
+.btn:hover{filter:brightness(1.15)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink)}
+.linkish{all:unset;cursor:pointer;color:var(--pencil);text-decoration:underline;text-underline-offset:3px;font-size:.88rem}
+.linkish:hover{color:var(--ink)}
+.linkish:focus-visible{outline:3px solid var(--focus)}
+.err{color:var(--red);font-size:.95rem}
+
+/* Practice */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.back{all:unset;cursor:pointer;color:var(--pencil);font-weight:500;padding:6px 0}
+.back:hover{color:var(--ink)}
+.ptitle{font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;letter-spacing:-.02em;margin:8px 0 14px;line-height:1.1}
+.ladder{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.rung{border:1.5px solid var(--ink);border-radius:4px;height:34px;position:relative;overflow:hidden;background:var(--sheet);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.rung .f{position:absolute;inset:0;background:var(--hl);transform-origin:left;transform:scaleX(0);transition:transform .35s ease}
+.rung span{position:relative;color:var(--ink)}
+.rung.done .f{transform:scaleX(1)} .rung.done span{color:var(--hl-ink)}
+.rung.cur{outline:2.5px solid var(--ink);outline-offset:2px}
+.status{display:flex;justify-content:space-between;font-size:.88rem;color:var(--pencil);margin-top:10px;flex-wrap:wrap;gap:6px}
+
+.sheet{position:relative;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;box-shadow:4px 4px 0 var(--rule);padding:22px 22px 24px 58px;margin-top:20px;
+  background-image:linear-gradient(90deg,transparent 42px,color-mix(in srgb,var(--red) 45%,transparent) 42px,color-mix(in srgb,var(--red) 45%,transparent) 43.5px,transparent 43.5px)}
+@media (max-width:560px){.sheet{padding:18px 16px 20px 40px;background-image:linear-gradient(90deg,transparent 26px,color-mix(in srgb,var(--red) 45%,transparent) 26px,color-mix(in srgb,var(--red) 45%,transparent) 27.5px,transparent 27.5px)}}
+.qn{position:absolute;left:10px;top:18px;font-family:var(--hand);font-size:1.5rem;color:var(--pencil);width:28px;text-align:center}
+@media (max-width:560px){.qn{left:2px;font-size:1.25rem;width:22px}}
+.qmeta{font-size:.82rem;color:var(--pencil);margin:0 0 8px}
+.qtext{font-size:1.13rem;line-height:1.6;margin:0 0 18px;font-weight:500;white-space:pre-line}
+.opts{display:grid;gap:8px}
+.opt{all:unset;box-sizing:border-box;display:flex;gap:12px;align-items:center;border:1.5px solid var(--rule);border-radius:8px;padding:11px 14px;cursor:pointer;background:var(--sheet)}
+.opt:hover:not([aria-disabled="true"]){border-color:var(--ink)}
+.opt:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
+.opt .k{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:.8rem;font-weight:700;flex:none}
+.opt.right{border-color:var(--green);background:color-mix(in srgb,var(--green) 12%,var(--sheet))}
+.opt.wrong{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,var(--sheet))}
+.opt[aria-disabled="true"]{cursor:default}
+.tita{display:flex;gap:8px;flex-wrap:wrap}
+.tita input{flex:1;min-width:140px;font-size:1.2rem;padding:11px 14px;border:none;border-bottom:2px solid var(--ink);background:transparent}
+.tita input:focus-visible{outline:none;border-bottom-color:var(--focus)}
+.mark{font-family:var(--hand);font-size:1.9rem;line-height:1.1;margin:18px 0 6px;transform:rotate(-1.5deg);transform-origin:left}
+.mark.ok{color:var(--green)} .mark.no{color:var(--red)}
+.sol{border-top:1px dashed var(--rule);margin-top:10px;padding-top:12px}
+.sol h3{font-size:.9rem;margin:0 0 6px;color:var(--pencil);font-weight:600}
+.sol ol{margin:0;padding-left:1.3em}
+.sol li{margin:3px 0}
+.row{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.flash{margin-top:14px;padding:10px 14px;border-radius:8px;font-weight:700;background:var(--hl);color:var(--hl-ink)}
+.flash.down{background:transparent;border:1.5px dashed var(--pencil);color:var(--pencil);font-weight:500}
+.thinking{font-family:var(--hand);font-size:1.6rem;color:var(--pencil);margin:0}
+
+/* Report card */
+.report{margin-top:22px}
+.stamp{display:inline-block;font-family:var(--hand);font-size:2rem;border:3px solid currentColor;border-radius:10px;padding:0 14px;transform:rotate(-4deg);margin:4px 0 14px}
+.stamp.ok{color:var(--green)} .stamp.no{color:var(--red)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0 0 14px}
+.facts dt{color:var(--pencil);font-size:.92rem}
+.facts dd{margin:0;font-weight:600}
+.qbars{display:grid;gap:6px;margin:6px 0 12px}
+.qbar{display:grid;grid-template-columns:120px 1fr 36px;gap:10px;align-items:center;font-size:.9rem}
+.qbar .track{height:10px;border:1.5px solid var(--ink);border-radius:3px;overflow:hidden}
+.qbar .track i{display:block;height:100%;background:var(--hl)}
+.qbar b{text-align:right}
+.mini{list-style:none;padding:0;margin:10px 0}
+.mini li{border-top:1px solid var(--rule);padding:10px 0;font-size:.95rem}
+.foot{margin-top:26px;font-size:.85rem;color:var(--pencil)}
+@media (prefers-reduced-motion:reduce){.rung .f{transition:none}.mark,.stamp{transform:none}}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<section id="home">
+  <header class="mast">
+    <h1>Revise <span class="hl">with AI</span></h1>
+    <p>Adaptive practice for CAT Arithmetic. Pick where to start on a 10-level scale. Get four in a row right and you move up.</p>
+    <p class="bankline" id="bankLine"></p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabPractice" aria-selected="true" aria-controls="panelPractice">Practice</button>
+    <button class="tab" role="tab" id="tabAdd" aria-selected="false" aria-controls="panelAdd">Add to the bank</button>
+  </div>
+
+  <div class="panel" id="panelPractice" role="tabpanel" aria-labelledby="tabPractice">
+    <div class="field">
+      <label for="topicSel">Topic</label>
+      <select id="topicSel"><option value="all">All topics</option></select>
+    </div>
+    <div class="field">
+      <span class="lab" id="startLab">Start at level</span>
+      <div class="ruler" id="startRuler" role="group" aria-labelledby="startLab"></div>
+      <p class="lvdesc" id="startDesc"></p>
+    </div>
+    <button class="btn" id="startBtn">Start practising</button>
+  </div>
+
+  <div class="panel" id="panelAdd" role="tabpanel" aria-labelledby="tabAdd" hidden>
+    <div class="field">
+      <label for="addText">Paste a question, or type a topic</label>
+      <textarea id="addText" placeholder="e.g. A train 240 m long crosses a pole in 12 s. Find its speed in km/h.&#10;&#10;or just: Boats and streams"></textarea>
+      <p class="hint">A question gets solved twice, checked by a third independent solve, scored for quality, and graded 1 to 10. If it passes, it joins the bank and the AI writes fresh-number versions of it.</p>
+      <p class="hint">For now the bank covers Arithmetic only: Percentages, Profit &amp; Loss, SI &amp; CI, Ratio &amp; Proportion, Averages, Mixtures &amp; Alligation, Time &amp; Work, and Time, Speed &amp; Distance.</p>
+    </div>
+    <div class="field">
+      <span class="lab" id="modeLab">This is</span>
+      <div class="seg2" role="group" aria-labelledby="modeLab">
+        <button id="modeQ" aria-pressed="true">A question</button><button id="modeT" aria-pressed="false">A topic</button>
+      </div>
+    </div>
+    <div class="field" id="keyField">
+      <label for="answerKey">Answer key (optional)</label>
+      <input class="txt" id="answerKey" autocomplete="off" placeholder="If you know the answer, add it and we'll compare">
+    </div>
+    <div class="field" id="genLevelField" hidden>
+      <span class="lab" id="genLab">Write questions at level</span>
+      <div class="ruler" id="genRuler" role="group" aria-labelledby="genLab"></div>
+      <p class="lvdesc" id="genDesc"></p>
+    </div>
+    <button class="btn" id="addBtn">Analyse and add</button>
+    <p class="err" id="addErr" role="alert"></p>
+    <div id="addOut" aria-live="polite"></div>
+  </div>
+
+  <p class="foot">Free for every CAT aspirant. Arithmetic for now, with more Quant topics coming. Questions come in CAT style: MCQs and TITA (type in the answer). Spot a wrong question? Report it and it gets pulled after a few reports.</p>
+</section>
+
+<section id="practice" hidden>
+  <div class="bar"><button class="back" id="backBtn">‹ Back</button></div>
+  <h2 class="ptitle" id="pTitle"></h2>
+  <div class="ladder" id="ladder" aria-label="Level progress"></div>
+  <div class="status"><span id="streakText"></span><span id="scoreText"></span></div>
+  <div class="sheet" id="sheet" aria-live="polite"></div>
+</section>
+
+</main>
+
+<script>
+const LEVELS = ['Basics', 'Easy', 'Textbook', 'Has a trap', 'CAT easy', 'CAT moderate', 'CAT moderate-hard', 'CAT hard', 'Toughest in a slot', 'Beyond CAT'];
+const LEVEL_DESC = [
+  'Direct formula, one step.', 'One concept, two short steps.', 'Standard textbook application.',
+  'Two concepts or a conversion, with a common trap.', 'One concept applied in a non-obvious way.',
+  'Two concepts combined, or needs a smart setup.', 'Multi-step with a twist, about 3 to 4 minutes.',
+  'Needs a non-routine insight or careful cases.', 'Among the hardest questions in a CAT slot.', 'Harder than CAT, still within the syllabus.'
+];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function api(path, body) {
+  const res = await fetch('/api/' + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
+  let data = null; try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error(data?.error?.message || `Something went wrong (${res.status}). Try again.`);
+  return data;
+}
+
+/* ---------- Rulers ---------- */
+function makeRuler(el, descEl, initial, onPick) {
+  el.innerHTML = LEVELS.map((n, i) => `<button aria-pressed="${i + 1 === initial}" aria-label="Level ${i + 1}: ${n}">${i + 1}</button>`).join('');
+  const set = v => { [...el.children].forEach((b, i) => b.setAttribute('aria-pressed', i + 1 === v)); descEl.textContent = `Level ${v}, ${LEVELS[v - 1]}: ${LEVEL_DESC[v - 1]}`; onPick(v); };
+  [...el.children].forEach((b, i) => b.onclick = () => set(i + 1));
+  set(initial);
+}
+let startLevel = 3, genLevel = 5;
+makeRuler($('startRuler'), $('startDesc'), 3, v => startLevel = v);
+makeRuler($('genRuler'), $('genDesc'), 5, v => genLevel = v);
+
+/* ---------- Tabs ---------- */
+function showTab(which) {
+  const p = which === 'practice';
+  $('tabPractice').setAttribute('aria-selected', p); $('tabAdd').setAttribute('aria-selected', !p);
+  $('panelPractice').hidden = !p; $('panelAdd').hidden = p;
+}
+$('tabPractice').onclick = () => showTab('practice');
+$('tabAdd').onclick = () => showTab('add');
+
+/* ---------- Topics ---------- */
+let topicData = [];
+async function loadTopics() {
+  try {
+    const d = await api('topics');
+    topicData = d.topics;
+    const sel = $('topicSel'), cur = sel.value;
+    sel.innerHTML = `<option value="all">All topics (${d.total})</option>` +
+      d.topics.map(t => `<option value="${esc(t.name)}">${esc(t.name)} (${t.count})</option>`).join('');
+    sel.value = cur;
+    $('bankLine').textContent = `${d.total.toLocaleString('en-IN')} questions in the bank so far, and growing.`;
+  } catch { $('bankLine').textContent = ''; }
+}
+loadTopics();
+
+/* ---------- Practice ---------- */
+let S = null;
+$('startBtn').onclick = () => startPractice($('topicSel').value, startLevel);
+$('backBtn').onclick = () => { S = null; $('practice').hidden = true; $('home').hidden = false; loadTopics(); window.scrollTo(0, 0); };
+
+function startPractice(topic, level) {
+  S = { topic, level, startLevel: level, streak: 0, misses: 0, n: 0, right: 0, seen: [], q: null, answered: false, refilled: {} };
+  $('home').hidden = true; $('practice').hidden = false;
+  $('pTitle').textContent = topic === 'all' ? 'All topics' : topic;
+  window.scrollTo(0, 0);
+  renderLadder(); nextQuestion();
+}
+
+function renderLadder() {
+  $('ladder').innerHTML = LEVELS.map((n, i) => {
+    const L = i + 1, done = L < S.level && L >= S.startLevel;
+    return `<div class="rung ${done ? 'done' : ''} ${L === S.level ? 'cur' : ''}" title="Level ${L}: ${n}"><div class="f" style="${L === S.level ? `transform:scaleX(${S.streak / 4})` : ''}"></div><span>${L}</span></div>`;
+  }).join('');
+  $('streakText').textContent = `Level ${S.level}, ${LEVELS[S.level - 1]}: ${S.streak} of 4 in a row`;
+  $('scoreText').textContent = S.n ? `${S.right}/${S.n} correct` : '';
+}
+
+async function nextQuestion() {
+  S.answered = false;
+  const sheet = $('sheet');
+  sheet.innerHTML = `<p class="thinking">Fetching a level ${S.level} question…</p>`;
+  const my = S;
+  try {
+    const qs = new URLSearchParams({ level: S.level, topic: S.topic, seen: S.seen.join(',') });
+    const d = await api('next?' + qs);
+    if (S !== my) return;
+    if (d.low && !S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
+    if (!d.question) {
+      sheet.innerHTML = `<p class="mark no">No new questions left near level ${S.level} yet.</p>
+        <p>The AI is writing fresh ones now. This usually takes under a minute.</p>
+        <div class="row"><button class="btn" id="retry">Check again</button><button class="btn ghost" id="toAdd">Add a question yourself</button></div>`;
+      $('retry').onclick = nextQuestion;
+      $('toAdd').onclick = () => { $('backBtn').click(); showTab('add'); };
+      return;
+    }
+    S.q = d.question; S.seen.push(d.question.id); S.servedNote = d.exact ? '' : ` (closest available to level ${S.level})`;
+    renderQuestion();
+  } catch (e) {
+    if (S !== my) return;
+    sheet.innerHTML = `<p class="mark no">${esc(e.message)}</p><div class="row"><button class="btn" id="retry">Try again</button></div>`;
+    $('retry').onclick = nextQuestion;
+  }
+}
+
+function renderQuestion() {
+  const q = S.q, sheet = $('sheet');
+  const solved = q.attempts >= 5 ? `, ${Math.round(100 * q.correctCount / q.attempts)}% of solvers got it` : '';
+  const kind = q.type === 'mcq' ? 'MCQ' : 'TITA, type the answer';
+  let html = `<span class="qn">${S.n + 1}</span>
+    <p class="qmeta">${esc(q.topic)}, level ${q.level}${esc(S.servedNote)}. ${kind}${solved}</p>
+    <p class="qtext">${esc(q.text)}</p>`;
+  if (q.type === 'mcq') {
+    html += `<div class="opts" role="group" aria-label="Options">${q.options.map((o, i) =>
+      `<button class="opt" data-i="${i}"><span class="k">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
+  } else {
+    html += `<div class="tita"><label for="ans" class="sr">Your answer</label><input id="ans" inputmode="decimal" autocomplete="off" placeholder="Your answer"><button class="btn" id="submit">Check</button></div><p class="err" id="titaNote"></p>`;
+  }
+  html += `<div id="fb"></div>`;
+  sheet.innerHTML = html;
+  if (q.type === 'mcq') sheet.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(+b.dataset.i === q.correctIndex, b));
+  else {
+    const inp = $('ans');
+    const go = () => {
+      const v = parseFloat(inp.value.replace(/[₹,\s]/g, '').replace('−', '-'));
+      if (isNaN(v)) { $('titaNote').textContent = 'Enter a number.'; return; }
+      answer(Math.abs(v - q.answer) <= Math.max(0.011, Math.abs(q.answer) * 1e-4));
+    };
+    $('submit').onclick = go;
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    if (matchMedia('(pointer:fine)').matches) inp.focus();
+  }
+}
+
+function answer(ok, btn) {
+  if (S.answered) return; S.answered = true;
+  const q = S.q; S.n++; if (ok) S.right++;
+  api('attempt', { id: q.id, correct: ok }).catch(() => {});
+  let flash = null, mastered = false;
+  if (ok) {
+    S.misses = 0; S.streak++;
+    if (S.streak === 4) {
+      if (S.level === 10) mastered = true;
+      else { S.level++; S.streak = 0; flash = { up: true, text: `Level ${S.level - 1} cleared. Up to level ${S.level}: ${LEVELS[S.level - 1]}.` }; }
+    }
+  } else {
+    S.streak = 0; S.misses++;
+    if (S.misses >= 2 && S.level > 1) { S.level--; S.misses = 0; flash = { up: false, text: `Two misses in a row, so we're dropping to level ${S.level} for a bit.` }; }
+  }
+  renderLadder();
+  if (q.type === 'mcq') {
+    $('sheet').querySelectorAll('.opt').forEach((b, i) => { b.setAttribute('aria-disabled', 'true'); b.tabIndex = -1; if (i === q.correctIndex) b.classList.add('right'); });
+    if (!ok && btn) btn.classList.add('wrong');
+  } else { $('ans').disabled = true; $('submit').disabled = true; }
+
+  const fb = $('fb');
+  fb.innerHTML = `<p class="mark ${ok ? 'ok' : 'no'}">${ok ? '✓ Correct!' : `✗ Not quite. Answer: ${esc(q.answerText)}`}</p>
+    <div class="sol"><h3>Solution</h3><ol>${q.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>
+    ${flash ? `<div class="flash ${flash.up ? '' : 'down'}">${esc(flash.text)}</div>` : ''}
+    <div class="row"><button class="btn" id="nextBtn">${mastered ? 'See result' : 'Next question'}</button><button class="linkish" id="flagBtn">Report a problem with this question</button></div>`;
+  $('nextBtn').onclick = mastered ? showMastered : nextQuestion;
+  $('flagBtn').onclick = async e => { e.target.disabled = true; try { await api('flag', { id: q.id }); e.target.textContent = 'Reported. Thanks.'; } catch (err) { e.target.textContent = err.message; } };
+  $('nextBtn').focus({ preventScroll: true });
+  fb.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
+function showMastered() {
+  $('sheet').innerHTML = `<span class="stamp ok">Mastered</span>
+    <p class="ptitle" style="margin:0 0 10px">${esc(S.topic === 'all' ? 'All topics' : S.topic)}</p>
+    <p>You cleared level 10 with four in a row. ${S.right} of ${S.n} correct this session.</p>
+    <div class="row"><button class="btn" id="again">Practise again</button><button class="btn ghost" id="other">Pick another topic</button></div>`;
+  $('again').onclick = () => startPractice(S.topic, S.startLevel);
+  $('other').onclick = () => $('backBtn').click();
+}
+
+/* ---------- Add to bank ---------- */
+let mode = 'question', modeTouched = false;
+function setMode(m, byUser) {
+  mode = m; if (byUser) modeTouched = true;
+  $('modeQ').setAttribute('aria-pressed', m === 'question'); $('modeT').setAttribute('aria-pressed', m === 'topic');
+  $('keyField').hidden = m !== 'question'; $('genLevelField').hidden = m !== 'topic';
+  $('addBtn').textContent = m === 'question' ? 'Analyse and add' : 'Write 3 questions';
+}
+$('modeQ').onclick = () => setMode('question', true);
+$('modeT').onclick = () => setMode('topic', true);
+$('addText').addEventListener('input', () => {
+  if (modeTouched) return;
+  const t = $('addText').value.trim();
+  if (t) setMode(t.length <= 60 && !/\d/.test(t) && !/[?=]/.test(t) ? 'topic' : 'question');
+});
+
+const STEPS_Q = ['Reading the question…', 'Solving it two different ways…', 'Scoring quality and difficulty…', 'Re-solving it independently to double-check…', 'Almost done…'];
+const STEPS_T = ['Planning the questions…', 'Writing them at your level…', 'Solving each one independently to verify…', 'Almost done…'];
+$('addBtn').onclick = async () => {
+  const text = $('addText').value.trim();
+  $('addErr').textContent = '';
+  if (!text) { $('addErr').textContent = 'Paste a question or type a topic first.'; return; }
+  const btn = $('addBtn'), out = $('addOut');
+  btn.disabled = true;
+  const steps = mode === 'question' ? STEPS_Q : STEPS_T; let si = 0;
+  out.innerHTML = `<div class="report"><p class="thinking" id="stepTxt">${steps[0]}</p></div>`;
+  const timer = setInterval(() => { si = Math.min(si + 1, steps.length - 1); const el = $('stepTxt'); if (el) el.textContent = steps[si]; }, 6000);
+  try {
+    const d = await api('submit', mode === 'question' ? { mode, text, answerKey: $('answerKey').value } : { mode, text, level: genLevel });
+    out.innerHTML = d.mode === 'topic' ? topicReport(d) : questionReport(d);
+    if (d.mode === 'question' && d.accepted) {
+      $('addText').value = ''; $('answerKey').value = '';
+      const v = $('varLine');
+      api('variations', { id: d.question.id })
+        .then(r => { v.textContent = r.saved ? `${r.saved} fresh-number variation${r.saved > 1 ? 's' : ''} added to the bank too.` : (r.note || 'No variations passed the checks this time.'); })
+        .catch(err => { v.textContent = err.message; });
+      $('practiseIt').onclick = () => startPractice(d.question.topic, d.question.level);
+    }
+    if (d.mode === 'topic' && d.saved.length) { $('addText').value = ''; $('practiseIt').onclick = () => startPractice(d.topic, d.level); }
+    loadTopics();
+  } catch (e) { out.innerHTML = ''; $('addErr').textContent = e.message; }
+  finally { clearInterval(timer); btn.disabled = false; }
+};
+
+function questionReport(d) {
+  const r = d.report || {};
+  const q = r.quality || {};
+  const bar = (label, v) => v == null ? '' : `<div class="qbar"><span>${label}</span><span class="track"><i style="width:${Math.max(0, Math.min(10, v)) * 10}%"></i></span><b>${v}</b></div>`;
+  const keyNote = r.visitorAnswerMatches === false ? `<p class="err">Your answer key doesn't match what the AI got (${esc(r.answerText)}). Double-check the solution below.</p>` : '';
+  return `<div class="report">
+    <span class="stamp ${d.accepted ? 'ok' : 'no'}">${d.accepted ? 'Added to the bank' : 'Not added'}</span>
+    ${d.accepted ? '' : `<p><b>Why:</b> ${esc(d.reason)}</p>`}
+    ${keyNote}
+    <dl class="facts">
+      ${r.difficulty ? `<dt>Difficulty</dt><dd>Level ${r.difficulty} of 10, ${esc(LEVELS[r.difficulty - 1])}. <span style="font-weight:400;color:var(--pencil)">${esc(r.difficultyReason)}</span></dd>` : ''}
+      ${r.topic ? `<dt>Topic</dt><dd>${esc(r.topic)}${r.subtopic ? `, ${esc(r.subtopic)}` : ''}</dd>` : ''}
+      ${r.answerText ? `<dt>Answer</dt><dd>${esc(r.answerText)}</dd>` : ''}
+      ${r.qualityOverall ? `<dt>Quality</dt><dd>${r.qualityOverall} / 10</dd>` : ''}
+    </dl>
+    <div class="qbars">${bar('Clarity', q.clarity)}${bar('Correctness', q.correctness)}${bar('CAT relevance', q.catRelevance)}${bar('Concept depth', q.conceptDepth)}</div>
+    ${r.qualityNotes ? `<p style="color:var(--pencil)">${esc(r.qualityNotes)}</p>` : ''}
+    ${r.solution && r.solution.length ? `<div class="sol"><h3>How the AI solved it</h3><ol>${r.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : ''}
+    ${d.accepted ? `<p class="thinking" id="varLine" style="font-size:1.3rem;margin-top:14px">Writing fresh-number variations…</p>
+      <div class="row"><button class="btn" id="practiseIt">Practise level ${r.difficulty} ${esc(r.topic)}</button></div>` : ''}
+  </div>`;
+}
+
+function topicReport(d) {
+  if (!d.saved.length) return `<div class="report"><span class="stamp no">Nothing added</span><p>None of the ${d.rejected} questions passed the independent re-solve check. Try again, or try a different level.</p></div>`;
+  return `<div class="report"><span class="stamp ok">${d.saved.length} added</span>
+    <p>New ${esc(d.topic)} questions at level ${d.level}${d.rejected ? `. ${d.rejected} more failed the independent re-solve and were thrown out` : ''}.</p>
+    <ul class="mini">${d.saved.map(q => `<li>${esc(q.text)}</li>`).join('')}</ul>
+    <div class="row"><button class="btn" id="practiseIt">Practise these</button></div></div>`;
+}
+</script>
+</body>
+</html>
