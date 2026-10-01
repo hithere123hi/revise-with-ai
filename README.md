@@ -17,7 +17,7 @@ with **Google Gemini's free Flash tier** for the AI.
 Menu names on these sites shift now and then; if a label differs slightly, look for the nearest match.
 
 ### 1. Get a free Gemini API key
-1. Go to https://aistudio.google.com and sign in with Google.
+1. Go to https://aistudio.google.com and sign in with Google. 
 2. Click **Get API key → Create API key**. Copy it somewhere safe. No card needed.
 3. Note the name of the free **Flash** model shown there. If it isn't `gemini-2.5-flash`, you'll change it in step 4.
 
