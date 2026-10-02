@@ -109,13 +109,37 @@ measured by their writer and their checker, and stored at the level they actuall
 
 **Quality control**: solve rates are shown after 5 attempts, and three "Report a problem" clicks hide a question.
 
+## The five AI providers
+
+The site uses up to five free providers in this order, skipping any that are out of quota
+(daily limits: skipped for 3 hours; per-minute limits: a short wait, then the next model):
+
+| # | Provider | Model | How to enable |
+|---|---|---|---|
+| 1 | Google Gemini | gemini-3.8-flash | `GEMINI_API_KEY` secret (aistudio.google.com) |
+| 2 | Groq | openai/gpt-oss-120b | `GROQ_API_KEY` secret (console.groq.com) |
+| 3 | Cerebras | gpt-oss-120b | `CEREBRAS_API_KEY` secret (cloud.cerebras.ai) |
+| 4 | Mistral | mistral-large-latest | `MISTRAL_API_KEY` secret (console.mistral.ai, free "Experiment" plan) |
+| 5 | Google backups | from `GEMINI_FALLBACK_MODEL` | uses the Gemini key |
+| 6 | Cloudflare Workers AI | llama-3.3-70b (last resort) | `[ai] binding = "AI"` in `wrangler.toml`, no key |
+
+Add secrets in Cloudflare: Pages project › Settings › Variables and Secrets › type *Secret*, then make
+any small commit on GitHub so the site redeploys. Missing keys are simply left out of the chain.
+The three independent verification checks start on different providers, so they really are independent.
+
+**Check the chain any time:** open `/api/health` on your site. It lists every model, whether it is
+ready or resting (and for how long), and today's AI call count.
+
+Optional overrides: `GROQ_MODEL`, `CEREBRAS_MODEL`, `MISTRAL_MODEL`, `CF_AI_MODEL`, or `AI_CHAIN`
+to set the exact order, e.g. `gemini:gemini-3.8-flash,groq:openai/gpt-oss-120b,cloudflare:@cf/meta/llama-3.3-70b-instruct-fp8-fast`.
+
 ## Settings (in `wrangler.toml`, edit on GitHub)
 
 | Setting | Default | What it does |
 |---|---|---|
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Main AI model |
 | `GEMINI_FALLBACK_MODEL` | `gemini-3.7-flash,...` | Models tried in order when the main one is busy |
-| `DAILY_AI_LIMIT` | `400` | Max AI calls per day. Keep it below the daily limit AI Studio shows |
+| `DAILY_AI_LIMIT` | `400` (raise to ~1500 with all five providers) | Max AI calls per day. Keep it below the daily limit AI Studio shows |
 | `VERIFY_PASSES` | `3` | Independent re-solves before an upload joins the bank |
 | `GENERATES_PER_HOUR` | `20` | New same-type questions one visitor can request per hour |
 | `MIN_QUALITY` | `6` | Minimum quality score (out of 10) to accept a question |
