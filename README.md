@@ -98,6 +98,13 @@ fits); new types then appear in the Practice tab automatically.
 that exact level come from the bank first. When none are left, the AI writes 2 new ones of the same
 type at that level, re-solves each independently, and serves only those that match.
 
+**Measured difficulty**: levels are not guessed. For every question the AI counts six features:
+ideas combined, solving steps, setup (direct / needs an equation / needs an insight), traps,
+calculation load and reading load. `levelFromFeatures()` in `lib/core.js` turns those counts into a
+level with one fixed formula, so a "level 6" means the same thing everywhere. Uploads are measured by
+the first solve and by every verification pass (the median wins); AI-written practice questions are
+measured by their writer and their checker, and stored at the level they actually came out at.
+
 **Adaptive levels**: four correct in a row moves up a level; two misses in a row moves down.
 
 **Quality control**: solve rates are shown after 5 attempts, and three "Report a problem" clicks hide a question.

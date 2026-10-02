@@ -1,6 +1,6 @@
 import {
   json, fail, readBody, take, clientIp, takeAiBudget, ai, analyzePrompt, patternCatalogue, pickPattern, pickTopic,
-  toCandidate, hashText, insertQuestion, candToClient, toClient, aiErrorResponse, TOPICS
+  toCandidate, hashText, insertQuestion, candToClient, toClient, aiErrorResponse, TOPICS, levelFromFeatures, describeFeatures
 } from '../../lib/core.js';
 
 // POST /api/analyze {text, answerKey?}
@@ -23,8 +23,8 @@ export async function onRequestPost({ request, env }) {
     const q = a.quality || {};
     const report = {
       topic, subtopic: a.subtopic || null, pattern: pickPattern(a.pattern, topic, cat),
-      difficulty: a.difficulty ? Math.min(10, Math.max(1, Math.round(Number(a.difficulty)))) : null,
-      difficultyReason: a.difficulty_reason || '',
+      difficulty: levelFromFeatures(a.features) || (a.difficulty ? Math.min(10, Math.max(1, Math.round(Number(a.difficulty)))) : null),
+      difficultyReason: [describeFeatures(a.features), a.difficulty_reason].filter(Boolean).join('. '),
       quality: { clarity: q.clarity, correctness: q.correctness, catRelevance: q.cat_relevance, conceptDepth: q.concept_depth },
       qualityOverall: Number(a.quality_overall) || 0, qualityNotes: a.quality_notes || '',
       answersAgree: !!a.answers_agree, visitorAnswerMatches: a.visitor_answer_matches ?? null,
@@ -35,7 +35,7 @@ export async function onRequestPost({ request, env }) {
     if (!topic) return stop(`Only Arithmetic questions are supported for now (${TOPICS.join(', ')}).`);
     const cand = toCandidate(a, {
       topic, subtopic: report.subtopic, level: report.difficulty || 5, level_reason: report.difficultyReason,
-      source: 'user', quality: report.qualityOverall, quality_detail: { ...q, notes: report.qualityNotes },
+      source: 'user', quality: report.qualityOverall, quality_detail: { ...q, notes: report.qualityNotes, features: a.features || null },
       pattern: report.pattern, status: 'pending'
     });
     if (!cand) return stop('The AI could not pin down one clear answer, so the question may be ambiguous.');

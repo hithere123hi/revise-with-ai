@@ -36,3 +36,8 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   count    INTEGER NOT NULL,
   reset_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS meta (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
