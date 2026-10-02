@@ -7,6 +7,8 @@ binding = "DB"
 database_name = "revise-with-ai-db"
 database_id = "b3b7dcfa-13c2-4225-b871-0d521cd189fe"
 
+[ai]
+binding = "AI"
 [vars]
 GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_FALLBACK_MODEL = "gemini-3.7-flash,gemini-3.5-flash,gemini-flash-lite-latest"
