@@ -22,10 +22,14 @@ CREATE TABLE IF NOT EXISTS questions (
   correct         INTEGER NOT NULL DEFAULT 0,
   flags           INTEGER NOT NULL DEFAULT 0,
   hidden          INTEGER NOT NULL DEFAULT 0,
+  pattern         TEXT,                         -- question type, e.g. 'Successive percentage change'
+  status          TEXT    NOT NULL DEFAULT 'live',  -- pending (being verified) | live | rejected
+  checks          TEXT,                         -- JSON summary of the background verification
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_q_serve ON questions (hidden, level, topic);
 CREATE INDEX IF NOT EXISTS idx_q_topic ON questions (topic, hidden);
+CREATE INDEX IF NOT EXISTS idx_q_pattern ON questions (status, pattern, level);
 
 CREATE TABLE IF NOT EXISTS rate_limits (
   key      TEXT PRIMARY KEY,

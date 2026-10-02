@@ -17,7 +17,7 @@ with **Google Gemini's free Flash tier** for the AI.
 Menu names on these sites shift now and then; if a label differs slightly, look for the nearest match.
 
 ### 1. Get a free Gemini API key
-1. Go to https://aistudio.google.com and sign in with Google. 
+1. Go to https://aistudio.google.com and sign in with Google.
 2. Click **Get API key → Create API key**. Copy it somewhere safe. No card needed.
 3. Note the name of the free **Flash** model shown there. If it isn't `gemini-2.5-flash`, you'll change it in step 4.
 
@@ -80,35 +80,44 @@ The bank ships with **586 starter questions** across all 8 Arithmetic topics:
 
 ## How it works
 
-**Adding a question**
-1. The AI rejects anything that isn't one clear Arithmetic question with a single answer.
-2. It solves it two different ways. If they disagree, it's rejected.
-3. It scores clarity, correctness, CAT relevance and concept depth (1 to 10 each). Below `MIN_QUALITY` is rejected.
-4. It grades difficulty 1 to 10 on a fixed rubric (1 = direct formula, 6 = moderate CAT, 10 = beyond CAT).
-5. A separate AI call solves it without seeing the answer. It must match.
-6. Exact and near-duplicate questions are rejected.
-7. If it passes, it's saved and the AI writes 2 fresh-number variations, each blind-checked too.
+**Upload a question** (`/api/analyze`, then `/api/verify`)
+1. One AI call solves it, checks the answer a second way, names the topic and the **question type**
+   (e.g. "Successive percentage change"), and estimates difficulty on a 1 to 10 scale. The student
+   sees all of this in about 20 seconds. The question is stored as *pending*.
+2. The student can immediately **practise that question type** at any level they pick.
+3. In the background, the AI solves the question `VERIFY_PASSES` more times (default 3), each time
+   independently and each time rating the difficulty. If at least two thirds of the solves match
+   and quality is good enough, the question goes **live** at the **median** of all difficulty ratings.
+   Otherwise it is rejected, with the reason shown to the student.
 
-**Adding a topic:** the AI writes 3 new questions at the chosen level, each blind-checked.
+**Question types**: `lib/patterns.js` holds a catalogue of 74 types across the 8 topics, and every
+starter question is tagged with one. The AI picks from this list (or names a new type when nothing
+fits); new types then appear in the Practice tab automatically.
 
-**Practice:** four correct in a row moves you up a level; two misses in a row moves you down.
-Clearing level 10 means the topic is mastered. When a level runs low, the AI writes more (at most once a minute).
+**Practising a type** (`/api/next` with `pattern`, `/api/generate`): questions of that exact type at
+that exact level come from the bank first. When none are left, the AI writes 2 new ones of the same
+type at that level, re-solves each independently, and serves only those that match.
 
-**Quality control:** each question shows its solve rate after 5 attempts. Three "Report a problem" clicks hide it.
+**Adaptive levels**: four correct in a row moves up a level; two misses in a row moves down.
+
+**Quality control**: solve rates are shown after 5 attempts, and three "Report a problem" clicks hide a question.
 
 ## Settings (in `wrangler.toml`, edit on GitHub)
 
 | Setting | Default | What it does |
 |---|---|---|
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Change if Google renames its free Flash model |
+| `GEMINI_MODEL` | `gemini-3.8-flash` | Main AI model |
+| `GEMINI_FALLBACK_MODEL` | `gemini-3.7-flash,...` | Models tried in order when the main one is busy |
 | `DAILY_AI_LIMIT` | `400` | Max AI calls per day. Keep it below the daily limit AI Studio shows |
+| `VERIFY_PASSES` | `3` | Independent re-solves before an upload joins the bank |
+| `GENERATES_PER_HOUR` | `20` | New same-type questions one visitor can request per hour |
 | `MIN_QUALITY` | `6` | Minimum quality score (out of 10) to accept a question |
 | `SUBMITS_PER_HOUR` | `10` | Questions or topics one visitor can add per hour |
 | `MAX_VARIATIONS` | `6` | Max variations from one original question |
 | `FLAGS_TO_HIDE` | `3` | Reports before a question is hidden |
 
-**AI usage:** adding a question uses 2 calls, plus 3 for its variations. A topic uses 4. So 400 calls a day
-is roughly 60 to 80 new questions added daily. **Practising uses no AI**, so any number of students can practise free.
+**AI usage:** an upload uses 1 call plus `VERIFY_PASSES` (4 in total by default). Each batch of 2 new
+same-type questions uses 3. So 400 calls a day covers roughly 50 uploads plus 60 new practice questions. **Practising uses no AI**, so any number of students can practise free.
 
 ## Managing the bank
 Cloudflare dashboard → **D1 → revise-with-ai-db → Console**. Examples:
@@ -136,11 +145,12 @@ Open http://localhost:8788
 
 ## Files
 ```
-public/index.html       the site: practice + add to bank
+public/index.html       the site: upload a question, practise by type
 public/setup.html       one-time database setup page
-functions/api/*.js      API: topics, next, submit, variations, refill, attempt, flag, setup
+functions/api/*.js      API: analyze, verify, status, generate, next, topics, refill, attempt, flag, setup
 lib/core.js             AI prompts, judging, difficulty rubric, duplicate checks, storage
-lib/schema.js           database tables (used by setup)
+lib/patterns.js         the catalogue of 74 question types
+lib/schema.js           database tables and upgrades (used by setup)
 lib/seed-data.js        586 starter questions (used by setup)
 db/*.sql                the same schema and seed as SQL, for command-line use
 wrangler.toml           Cloudflare config and settings

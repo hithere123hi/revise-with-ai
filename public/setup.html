@@ -29,7 +29,7 @@ a{color:inherit}
 <body>
 <main>
   <h1>Set up the question bank</h1>
-  <p>Run this once after your first deploy. It creates the database tables and loads the starter questions. Running it again is safe.</p>
+  <p>Run this once after your first deploy. It creates or upgrades the database tables and loads the starter questions. Run it again after any update; it only adds what's missing.</p>
   <label for="tok">Admin token</label>
   <input id="tok" type="password" autocomplete="off" placeholder="The ADMIN_TOKEN you added in Cloudflare">
   <button id="go">Set up database</button>
@@ -41,15 +41,15 @@ document.getElementById('go').onclick = async () => {
   const token = document.getElementById('tok').value.trim();
   if (!token) { out.className = 'bad'; out.textContent = 'Enter the admin token first.'; return; }
   btn.disabled = true; out.className = ''; out.textContent = 'Creating tables…';
-  let offset = 0;
+  let offset = 0, phase = 'schema';
   try {
     while (true) {
-      const res = await fetch('/api/setup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, offset }) });
+      const res = await fetch('/api/setup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, offset, phase }) });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error?.message || 'Setup failed.');
       out.textContent = `Loading starter questions: ${Math.min(d.next, d.seedSize)} of ${d.seedSize}…`;
       if (d.done) { out.className = 'ok'; out.innerHTML = `Done. ${d.questionsInBank} questions are in the bank. <a href="/">Open the site</a>`; break; }
-      offset = d.next;
+      phase = 'rows'; offset = d.next;
     }
   } catch (e) { out.className = 'bad'; out.textContent = e.message; }
   btn.disabled = false;

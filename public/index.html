@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Revise with AI: adaptive CAT Arithmetic practice</title>
+<title>Revise with AI: practise any CAT Arithmetic question type</title>
 <meta name="description" content="Free adaptive CAT Arithmetic practice. Ten difficulty levels, AI-checked questions, and a bank anyone can add to.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,6 +136,18 @@ textarea{min-height:150px;resize:vertical;line-height:1.5}
 .mini li{border-top:1px solid var(--rule);padding:10px 0;font-size:.95rem}
 .foot{margin-top:26px;font-size:.85rem;color:var(--pencil)}
 @media (prefers-reduced-motion:reduce){.rung .f{transition:none}.mark,.stamp{transform:none}}
+
+.vbox{margin-top:16px;border:1.5px dashed var(--rule);border-radius:10px;padding:12px 14px;font-size:.95rem}
+.vbox.ok{border-style:solid;border-color:var(--green)} .vbox.no{border-style:solid;border-color:var(--red)}
+.vbox b{display:block;margin-bottom:2px}
+.practice-cta{margin-top:20px;padding:16px;border:2px solid var(--ink);border-radius:10px;background:color-mix(in srgb,var(--hl) 14%,var(--sheet))}
+.practice-cta h3{margin:0 0 4px;font-size:1.1rem}
+.practice-cta p{margin:0 0 12px;color:var(--pencil);font-size:.92rem}
+.sub{color:var(--pencil);font-size:.95rem;margin:-6px 0 14px}
+.badge{margin-top:10px;font-size:.88rem;color:var(--pencil)}
+.badge.ok{color:var(--green)} .badge.no{color:var(--red)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.row2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -144,19 +156,34 @@ textarea{min-height:150px;resize:vertical;line-height:1.5}
 <section id="home">
   <header class="mast">
     <h1>Revise <span class="hl">with AI</span></h1>
-    <p>Adaptive practice for CAT Arithmetic. Pick where to start on a 10-level scale. Get four in a row right and you move up.</p>
+    <p>Paste any CAT Arithmetic question. Get the solution, its question type and difficulty, then practise the same type of question at whatever level you choose.</p>
     <p class="bankline" id="bankLine"></p>
   </header>
 
   <div class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tabPractice" aria-selected="true" aria-controls="panelPractice">Practice</button>
-    <button class="tab" role="tab" id="tabAdd" aria-selected="false" aria-controls="panelAdd">Add to the bank</button>
+    <button class="tab" role="tab" id="tabUp" aria-selected="true" aria-controls="panelUp">Upload a question</button>
+    <button class="tab" role="tab" id="tabPr" aria-selected="false" aria-controls="panelPr">Practice</button>
   </div>
 
-  <div class="panel" id="panelPractice" role="tabpanel" aria-labelledby="tabPractice">
+  <div class="panel" id="panelUp" role="tabpanel" aria-labelledby="tabUp">
     <div class="field">
-      <label for="topicSel">Topic</label>
-      <select id="topicSel"><option value="all">All topics</option></select>
+      <label for="qText">Your question</label>
+      <textarea id="qText" placeholder="e.g. A shopkeeper buys pens at 12 for ₹90 and sells them at 10 for ₹90. Find his profit percentage."></textarea>
+      <p class="hint">Arithmetic only for now: Percentages, Profit &amp; Loss, SI &amp; CI, Ratio &amp; Proportion, Averages, Mixtures &amp; Alligation, Time &amp; Work, and Time, Speed &amp; Distance. Include the options if it has them.</p>
+    </div>
+    <div class="field">
+      <label for="answerKey">Answer key (optional)</label>
+      <input class="txt" id="answerKey" autocomplete="off" placeholder="If you know the answer, add it and we'll compare">
+    </div>
+    <button class="btn" id="solveBtn">Solve it</button>
+    <p class="err" id="upErr" role="alert"></p>
+    <div id="upOut" aria-live="polite"></div>
+  </div>
+
+  <div class="panel" id="panelPr" role="tabpanel" aria-labelledby="tabPr" hidden>
+    <div class="row2">
+      <div class="field"><label for="topicSel">Topic</label><select id="topicSel"></select></div>
+      <div class="field"><label for="typeSel">Question type</label><select id="typeSel"><option value="">All types</option></select></div>
     </div>
     <div class="field">
       <span class="lab" id="startLab">Start at level</span>
@@ -166,41 +193,16 @@ textarea{min-height:150px;resize:vertical;line-height:1.5}
     <button class="btn" id="startBtn">Start practising</button>
   </div>
 
-  <div class="panel" id="panelAdd" role="tabpanel" aria-labelledby="tabAdd" hidden>
-    <div class="field">
-      <label for="addText">Paste a question, or type a topic</label>
-      <textarea id="addText" placeholder="e.g. A train 240 m long crosses a pole in 12 s. Find its speed in km/h.&#10;&#10;or just: Boats and streams"></textarea>
-      <p class="hint">A question gets solved twice, checked by a third independent solve, scored for quality, and graded 1 to 10. If it passes, it joins the bank and the AI writes fresh-number versions of it.</p>
-      <p class="hint">For now the bank covers Arithmetic only: Percentages, Profit &amp; Loss, SI &amp; CI, Ratio &amp; Proportion, Averages, Mixtures &amp; Alligation, Time &amp; Work, and Time, Speed &amp; Distance.</p>
-    </div>
-    <div class="field">
-      <span class="lab" id="modeLab">This is</span>
-      <div class="seg2" role="group" aria-labelledby="modeLab">
-        <button id="modeQ" aria-pressed="true">A question</button><button id="modeT" aria-pressed="false">A topic</button>
-      </div>
-    </div>
-    <div class="field" id="keyField">
-      <label for="answerKey">Answer key (optional)</label>
-      <input class="txt" id="answerKey" autocomplete="off" placeholder="If you know the answer, add it and we'll compare">
-    </div>
-    <div class="field" id="genLevelField" hidden>
-      <span class="lab" id="genLab">Write questions at level</span>
-      <div class="ruler" id="genRuler" role="group" aria-labelledby="genLab"></div>
-      <p class="lvdesc" id="genDesc"></p>
-    </div>
-    <button class="btn" id="addBtn">Analyse and add</button>
-    <p class="err" id="addErr" role="alert"></p>
-    <div id="addOut" aria-live="polite"></div>
-  </div>
-
-  <p class="foot">Free for every CAT aspirant. Arithmetic for now, with more Quant topics coming. Questions come in CAT style: MCQs and TITA (type in the answer). Spot a wrong question? Report it and it gets pulled after a few reports.</p>
+  <p class="foot">Free for every CAT aspirant. Questions come in CAT style: MCQs and TITA (type in the answer). Four correct in a row moves you up a level; two misses in a row moves you down. Spot a wrong question? Report it and it gets pulled after a few reports.</p>
 </section>
 
 <section id="practice" hidden>
   <div class="bar"><button class="back" id="backBtn">‹ Back</button></div>
   <h2 class="ptitle" id="pTitle"></h2>
+  <p class="sub" id="pSub"></p>
   <div class="ladder" id="ladder" aria-label="Level progress"></div>
   <div class="status"><span id="streakText"></span><span id="scoreText"></span></div>
+  <p class="badge" id="pBadge" aria-live="polite" hidden></p>
   <div class="sheet" id="sheet" aria-live="polite"></div>
 </section>
 
@@ -216,6 +218,7 @@ const LEVEL_DESC = [
 ];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 async function api(path, body) {
   const res = await fetch('/api/' + path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
@@ -224,52 +227,158 @@ async function api(path, body) {
   return data;
 }
 
-/* ---------- Rulers ---------- */
 function makeRuler(el, descEl, initial, onPick) {
-  el.innerHTML = LEVELS.map((n, i) => `<button aria-pressed="${i + 1 === initial}" aria-label="Level ${i + 1}: ${n}">${i + 1}</button>`).join('');
+  el.innerHTML = LEVELS.map((n, i) => `<button aria-pressed="false" aria-label="Level ${i + 1}: ${n}">${i + 1}</button>`).join('');
   const set = v => { [...el.children].forEach((b, i) => b.setAttribute('aria-pressed', i + 1 === v)); descEl.textContent = `Level ${v}, ${LEVELS[v - 1]}: ${LEVEL_DESC[v - 1]}`; onPick(v); };
   [...el.children].forEach((b, i) => b.onclick = () => set(i + 1));
   set(initial);
+  return set;
 }
-let startLevel = 3, genLevel = 5;
-makeRuler($('startRuler'), $('startDesc'), 3, v => startLevel = v);
-makeRuler($('genRuler'), $('genDesc'), 5, v => genLevel = v);
 
 /* ---------- Tabs ---------- */
 function showTab(which) {
-  const p = which === 'practice';
-  $('tabPractice').setAttribute('aria-selected', p); $('tabAdd').setAttribute('aria-selected', !p);
-  $('panelPractice').hidden = !p; $('panelAdd').hidden = p;
+  const up = which === 'up';
+  $('tabUp').setAttribute('aria-selected', up); $('tabPr').setAttribute('aria-selected', !up);
+  $('panelUp').hidden = !up; $('panelPr').hidden = up;
 }
-$('tabPractice').onclick = () => showTab('practice');
-$('tabAdd').onclick = () => showTab('add');
+$('tabUp').onclick = () => showTab('up');
+$('tabPr').onclick = () => showTab('pr');
 
-/* ---------- Topics ---------- */
+/* ---------- Topics and types ---------- */
 let topicData = [];
 async function loadTopics() {
   try {
     const d = await api('topics');
     topicData = d.topics;
     const sel = $('topicSel'), cur = sel.value;
-    sel.innerHTML = `<option value="all">All topics (${d.total})</option>` +
-      d.topics.map(t => `<option value="${esc(t.name)}">${esc(t.name)} (${t.count})</option>`).join('');
-    sel.value = cur;
-    $('bankLine').textContent = `${d.total.toLocaleString('en-IN')} questions in the bank so far, and growing.`;
+    sel.innerHTML = `<option value="all">All topics (${d.total})</option>` + d.topics.map(t => `<option value="${esc(t.name)}">${esc(t.name)} (${t.count})</option>`).join('');
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    fillTypes();
+    $('bankLine').textContent = `${d.total.toLocaleString('en-IN')} verified questions in the bank, across ${d.topics.reduce((a, t) => a + t.patterns.length, 0)} question types.`;
   } catch { $('bankLine').textContent = ''; }
 }
+function fillTypes() {
+  const t = topicData.find(x => x.name === $('topicSel').value);
+  const sel = $('typeSel'), cur = sel.value;
+  sel.disabled = !t;
+  sel.innerHTML = '<option value="">All types</option>' + (t ? t.patterns.map(p => `<option value="${esc(p.name)}">${esc(p.name)} (${p.count})</option>`).join('') : '');
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
+$('topicSel').onchange = fillTypes;
 loadTopics();
+
+let startLevel = 3;
+makeRuler($('startRuler'), $('startDesc'), 3, v => startLevel = v);
+$('startBtn').onclick = () => {
+  const topic = $('topicSel').value || 'all', pattern = $('typeSel').value || null;
+  startPractice({ topic, pattern, level: startLevel });
+};
+
+/* ---------- Upload and solve ---------- */
+let upload = null;   // { id, status, level, checks, pattern }
+const STEPS = ['Reading your question…', 'Solving it…', 'Checking the answer a second way…', 'Working out the question type and difficulty…', 'Almost done…'];
+
+$('solveBtn').onclick = async () => {
+  const text = $('qText').value.trim();
+  $('upErr').textContent = '';
+  if (text.length < 15) { $('upErr').textContent = 'Paste the full question first.'; return; }
+  const btn = $('solveBtn'), out = $('upOut');
+  btn.disabled = true;
+  let si = 0;
+  out.innerHTML = `<div class="report"><p class="thinking" id="stepTxt">${STEPS[0]}</p></div>`;
+  const timer = setInterval(() => { si = Math.min(si + 1, STEPS.length - 1); const el = $('stepTxt'); if (el) el.textContent = STEPS[si]; }, 5000);
+  try {
+    const d = await api('analyze', { text, answerKey: $('answerKey').value });
+    out.innerHTML = reportCard(d);
+    if (d.ok) {
+      upload = { id: d.id, status: d.status, pattern: d.report.pattern, topic: d.report.topic, level: d.report.difficulty, checks: null };
+      const setLvl = makeRuler($('ctaRuler'), $('ctaDesc'), d.report.difficulty || 5, v => upload.chosen = v);
+      $('ctaBtn').onclick = () => startPractice({ topic: d.report.topic, pattern: d.report.pattern, level: upload.chosen, exampleId: d.id });
+      renderUpload();
+      if (d.status === 'pending') verifyUpload(d.id);
+    }
+  } catch (e) { out.innerHTML = ''; $('upErr').textContent = e.message; }
+  finally { clearInterval(timer); btn.disabled = false; }
+};
+
+function reportCard(d) {
+  const r = d.report || {};
+  const keyNote = r.visitorAnswerMatches === false ? `<p class="err">Your answer key doesn't match the answer here (${esc(r.answerText)}). Check the solution below.</p>` : '';
+  const facts = `<dl class="facts">
+      ${r.topic ? `<dt>Topic</dt><dd>${esc(r.topic)}</dd>` : ''}
+      ${r.pattern ? `<dt>Question type</dt><dd>${esc(r.pattern)}</dd>` : ''}
+      ${r.difficulty ? `<dt>Difficulty</dt><dd>Level ${r.difficulty} of 10, ${esc(LEVELS[r.difficulty - 1])}. <span style="font-weight:400;color:var(--pencil)">${esc(r.difficultyReason)}</span></dd>` : ''}
+      ${r.answerText ? `<dt>Answer</dt><dd>${esc(r.answerText)}</dd>` : ''}
+    </dl>`;
+  const sol = r.solution && r.solution.length ? `<div class="sol"><h3>Solution</h3><ol>${r.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : '';
+  if (!d.ok) return `<div class="report"><span class="stamp no">Can't use this one</span><p><b>Why:</b> ${esc(d.reason)}</p>${facts}${sol}</div>`;
+  return `<div class="report"><span class="stamp ok">Solved</span>${keyNote}${facts}${sol}
+    <div class="vbox" id="vbox"></div>
+    ${r.pattern ? `<div class="practice-cta">
+      <h3>Practise more “${esc(r.pattern)}” questions</h3>
+      <p>Pick a level. We use verified questions of this type from the bank, and write new ones at your level when we run out.</p>
+      <div class="ruler" id="ctaRuler" role="group" aria-label="Practice level"></div>
+      <p class="lvdesc" id="ctaDesc"></p>
+      <button class="btn" id="ctaBtn">Start practising this type</button>
+    </div>` : ''}
+  </div>`;
+}
+
+const PASSES = 3;
+function uploadText() {
+  if (!upload) return { cls: '', title: '', body: '' };
+  const c = upload.checks || {};
+  if (upload.status === 'live') return { cls: 'ok', title: `✓ Verified and added to the bank at level ${upload.level}`,
+    body: c.passes ? `${c.agreed} of ${c.passes} independent solves matched the answer. Difficulty ratings: ${(c.levels || []).join(', ')}, so it settled at the middle value.` : 'This question is already in the bank.' };
+  if (upload.status === 'rejected') return { cls: 'no', title: '✗ Not added to the bank',
+    body: `${c.reason || 'It did not pass the independent checks.'} The practice questions are checked separately, so you can still practise this type.` };
+  if (upload.status === 'retry') return { cls: '', title: 'Background check paused',
+    body: 'Google\'s AI was busy, so the independent check will run again automatically later. You can practise meanwhile.' };
+  return { cls: '', title: 'Double-checking in the background…',
+    body: `Solving it ${PASSES} more times independently and rating its difficulty each time. If the solves agree, it joins the bank at the agreed level. Start practising meanwhile.` };
+}
+function renderUpload() {
+  const t = uploadText(), box = $('vbox');
+  if (box) { box.className = 'vbox ' + t.cls; box.innerHTML = `<b>${esc(t.title)}</b>${esc(t.body)}`; }
+  const badge = $('pBadge');
+  if (S && S.exampleId && upload && S.exampleId === upload.id) {
+    badge.hidden = false; badge.className = 'badge ' + t.cls;
+    badge.textContent = `Your question: ${t.title.replace(/…$/, '')}${t.cls ? '' : '…'}`;
+  } else badge.hidden = true;
+}
+async function verifyUpload(id) {
+  try {
+    const v = await api('verify', { id });
+    if (!upload || upload.id !== id) return;
+    Object.assign(upload, { status: v.status, level: v.level, checks: v.checks });
+    if (v.status === 'verifying' || v.status === 'pending') return pollUpload(id);
+  } catch (e) { if (upload && upload.id === id) upload.status = 'retry'; }
+  renderUpload(); loadTopics();
+}
+async function pollUpload(id, tries = 0) {
+  if (tries > 30) return;
+  await new Promise(r => setTimeout(r, 5000));
+  try {
+    const v = await api('status?id=' + id);
+    if (!upload || upload.id !== id) return;
+    Object.assign(upload, { status: v.status, level: v.level, checks: v.checks });
+    renderUpload();
+    if (v.status === 'pending' || v.status === 'verifying') pollUpload(id, tries + 1);
+  } catch { pollUpload(id, tries + 1); }
+}
 
 /* ---------- Practice ---------- */
 let S = null;
-$('startBtn').onclick = () => startPractice($('topicSel').value, startLevel);
 $('backBtn').onclick = () => { S = null; $('practice').hidden = true; $('home').hidden = false; loadTopics(); window.scrollTo(0, 0); };
 
-function startPractice(topic, level) {
-  S = { topic, level, startLevel: level, streak: 0, misses: 0, n: 0, right: 0, seen: [], q: null, answered: false, refilled: {} };
+function startPractice({ topic, pattern, level, exampleId }) {
+  S = { topic: topic || 'all', pattern: pattern || null, exampleId: exampleId || null, level, startLevel: level,
+        streak: 0, misses: 0, n: 0, right: 0, seen: exampleId ? [exampleId] : [], queue: [], generating: {}, refilled: {}, q: null, answered: false };
   $('home').hidden = true; $('practice').hidden = false;
-  $('pTitle').textContent = topic === 'all' ? 'All topics' : topic;
+  $('pTitle').textContent = S.pattern || (S.topic === 'all' ? 'All topics' : S.topic);
+  $('pSub').textContent = S.pattern ? `${S.topic} · same question type, your choice of level` : 'Mixed question types';
   window.scrollTo(0, 0);
-  renderLadder(); nextQuestion();
+  renderLadder(); renderUpload(); nextQuestion();
 }
 
 function renderLadder() {
@@ -281,30 +390,59 @@ function renderLadder() {
   $('scoreText').textContent = S.n ? `${S.right}/${S.n} correct` : '';
 }
 
+function generateFor(level) {
+  if (!S || !S.pattern) return null;
+  if (!S.generating[level]) {
+    const my = S;
+    S.generating[level] = api('generate', { pattern: S.pattern, level, exampleId: S.exampleId })
+      .then(d => { if (S === my) my.queue.push(...d.saved); return d; })
+      .finally(() => { delete my.generating[level]; });
+  }
+  return S.generating[level];
+}
+function takeFromQueue() {
+  const i = S.queue.findIndex(q => q.level === S.level && !S.seen.includes(q.id));
+  return i >= 0 ? S.queue.splice(i, 1)[0] : null;
+}
+function serve(q, note) {
+  S.q = q; S.seen.push(q.id); S.servedNote = note || '';
+  renderQuestion();
+}
+
 async function nextQuestion() {
   S.answered = false;
-  const sheet = $('sheet');
+  const sheet = $('sheet'), my = S;
+  const queued = takeFromQueue();
+  if (queued) { serve(queued); if (S.pattern && !S.queue.some(q => q.level === S.level)) generateFor(S.level)?.catch(() => {}); return; }
   sheet.innerHTML = `<p class="thinking">Fetching a level ${S.level} question…</p>`;
-  const my = S;
   try {
-    const qs = new URLSearchParams({ level: S.level, topic: S.topic, seen: S.seen.join(',') });
+    const qs = new URLSearchParams({ level: S.level, topic: S.pattern ? 'all' : S.topic, pattern: S.pattern || '', seen: S.seen.join(',') });
     const d = await api('next?' + qs);
     if (S !== my) return;
-    if (d.low && !S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
-    if (!d.question) {
-      sheet.innerHTML = `<p class="mark no">No new questions left near level ${S.level} yet.</p>
-        <p>The AI is writing fresh ones now. This usually takes under a minute.</p>
-        <div class="row"><button class="btn" id="retry">Check again</button><button class="btn ghost" id="toAdd">Add a question yourself</button></div>`;
-      $('retry').onclick = nextQuestion;
-      $('toAdd').onclick = () => { $('backBtn').click(); showTab('add'); };
+    if (d.question) {
+      serve(d.question, d.exact ? '' : ` (closest available to level ${S.level})`);
+      if (S.pattern && d.remainingAtLevel < 2) generateFor(S.level)?.catch(() => {});   // prepare the next ones early
+      if (!S.pattern && d.low && !S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
       return;
     }
-    S.q = d.question; S.seen.push(d.question.id); S.servedNote = d.exact ? '' : ` (closest available to level ${S.level})`;
-    renderQuestion();
+    if (!S.pattern) {
+      sheet.innerHTML = `<p class="mark no">No new questions left near level ${S.level} yet.</p><p>New ones are being written. Check again in a minute.</p><div class="row"><button class="btn" id="retry">Check again</button></div>`;
+      $('retry').onclick = nextQuestion;
+      if (!S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
+      return;
+    }
+    sheet.innerHTML = `<p class="thinking">Writing a new level ${S.level} “${esc(S.pattern)}” question for you…</p><p style="color:var(--pencil)">Each one is solved again independently before you see it. Usually 20 to 40 seconds.</p>`;
+    const g = await generateFor(S.level);
+    if (S !== my) return;
+    const q = takeFromQueue();
+    if (q) return serve(q);
+    throw new Error(g && g.rejected ? 'The new questions failed our accuracy check, so we threw them away.' : 'Could not write a new question this time.');
   } catch (e) {
     if (S !== my) return;
-    sheet.innerHTML = `<p class="mark no">${esc(e.message)}</p><div class="row"><button class="btn" id="retry">Try again</button></div>`;
+    const alt = [S.level - 1, S.level + 1].filter(l => l >= 1 && l <= 10);
+    sheet.innerHTML = `<p class="mark no">${esc(e.message)}</p><div class="row"><button class="btn" id="retry">Try again</button>${alt.map(l => `<button class="btn ghost" data-l="${l}">Try level ${l}</button>`).join('')}</div>`;
     $('retry').onclick = nextQuestion;
+    sheet.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { S.level = +b.dataset.l; S.streak = 0; S.misses = 0; renderLadder(); nextQuestion(); });
   }
 }
 
@@ -313,16 +451,11 @@ function renderQuestion() {
   const solved = q.attempts >= 5 ? `, ${Math.round(100 * q.correctCount / q.attempts)}% of solvers got it` : '';
   const kind = q.type === 'mcq' ? 'MCQ' : 'TITA, type the answer';
   let html = `<span class="qn">${S.n + 1}</span>
-    <p class="qmeta">${esc(q.topic)}, level ${q.level}${esc(S.servedNote)}. ${kind}${solved}</p>
+    <p class="qmeta">${esc(q.pattern || q.topic)}, level ${q.level}${esc(S.servedNote)}. ${kind}${solved}</p>
     <p class="qtext">${esc(q.text)}</p>`;
-  if (q.type === 'mcq') {
-    html += `<div class="opts" role="group" aria-label="Options">${q.options.map((o, i) =>
-      `<button class="opt" data-i="${i}"><span class="k">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
-  } else {
-    html += `<div class="tita"><label for="ans" class="sr">Your answer</label><input id="ans" inputmode="decimal" autocomplete="off" placeholder="Your answer"><button class="btn" id="submit">Check</button></div><p class="err" id="titaNote"></p>`;
-  }
-  html += `<div id="fb"></div>`;
-  sheet.innerHTML = html;
+  if (q.type === 'mcq') html += `<div class="opts" role="group" aria-label="Options">${q.options.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
+  else html += `<div class="tita"><label for="ans" class="sr">Your answer</label><input id="ans" inputmode="decimal" autocomplete="off" placeholder="Your answer"><button class="btn" id="submit">Check</button></div><p class="err" id="titaNote"></p>`;
+  sheet.innerHTML = html + '<div id="fb"></div>';
   if (q.type === 'mcq') sheet.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(+b.dataset.i === q.correctIndex, b));
   else {
     const inp = $('ans');
@@ -353,11 +486,11 @@ function answer(ok, btn) {
     if (S.misses >= 2 && S.level > 1) { S.level--; S.misses = 0; flash = { up: false, text: `Two misses in a row, so we're dropping to level ${S.level} for a bit.` }; }
   }
   renderLadder();
+  if (S.pattern && !S.queue.some(x => x.level === S.level)) generateFor(S.level)?.catch(() => {});   // get the next level ready
   if (q.type === 'mcq') {
     $('sheet').querySelectorAll('.opt').forEach((b, i) => { b.setAttribute('aria-disabled', 'true'); b.tabIndex = -1; if (i === q.correctIndex) b.classList.add('right'); });
     if (!ok && btn) btn.classList.add('wrong');
   } else { $('ans').disabled = true; $('submit').disabled = true; }
-
   const fb = $('fb');
   fb.innerHTML = `<p class="mark ${ok ? 'ok' : 'no'}">${ok ? '✓ Correct!' : `✗ Not quite. Answer: ${esc(q.answerText)}`}</p>
     <div class="sol"><h3>Solution</h3><ol>${q.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>
@@ -366,91 +499,16 @@ function answer(ok, btn) {
   $('nextBtn').onclick = mastered ? showMastered : nextQuestion;
   $('flagBtn').onclick = async e => { e.target.disabled = true; try { await api('flag', { id: q.id }); e.target.textContent = 'Reported. Thanks.'; } catch (err) { e.target.textContent = err.message; } };
   $('nextBtn').focus({ preventScroll: true });
-  fb.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  fb.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
 }
 
 function showMastered() {
   $('sheet').innerHTML = `<span class="stamp ok">Mastered</span>
-    <p class="ptitle" style="margin:0 0 10px">${esc(S.topic === 'all' ? 'All topics' : S.topic)}</p>
+    <p class="ptitle" style="margin:0 0 10px">${esc(S.pattern || (S.topic === 'all' ? 'All topics' : S.topic))}</p>
     <p>You cleared level 10 with four in a row. ${S.right} of ${S.n} correct this session.</p>
-    <div class="row"><button class="btn" id="again">Practise again</button><button class="btn ghost" id="other">Pick another topic</button></div>`;
-  $('again').onclick = () => startPractice(S.topic, S.startLevel);
+    <div class="row"><button class="btn" id="again">Practise again</button><button class="btn ghost" id="other">Back</button></div>`;
+  $('again').onclick = () => startPractice({ topic: S.topic, pattern: S.pattern, level: S.startLevel, exampleId: S.exampleId });
   $('other').onclick = () => $('backBtn').click();
-}
-
-/* ---------- Add to bank ---------- */
-let mode = 'question', modeTouched = false;
-function setMode(m, byUser) {
-  mode = m; if (byUser) modeTouched = true;
-  $('modeQ').setAttribute('aria-pressed', m === 'question'); $('modeT').setAttribute('aria-pressed', m === 'topic');
-  $('keyField').hidden = m !== 'question'; $('genLevelField').hidden = m !== 'topic';
-  $('addBtn').textContent = m === 'question' ? 'Analyse and add' : 'Write 3 questions';
-}
-$('modeQ').onclick = () => setMode('question', true);
-$('modeT').onclick = () => setMode('topic', true);
-$('addText').addEventListener('input', () => {
-  if (modeTouched) return;
-  const t = $('addText').value.trim();
-  if (t) setMode(t.length <= 60 && !/\d/.test(t) && !/[?=]/.test(t) ? 'topic' : 'question');
-});
-
-const STEPS_Q = ['Reading the question…', 'Solving it two different ways…', 'Scoring quality and difficulty…', 'Re-solving it independently to double-check…', 'Almost done…'];
-const STEPS_T = ['Planning the questions…', 'Writing them at your level…', 'Solving each one independently to verify…', 'Almost done…'];
-$('addBtn').onclick = async () => {
-  const text = $('addText').value.trim();
-  $('addErr').textContent = '';
-  if (!text) { $('addErr').textContent = 'Paste a question or type a topic first.'; return; }
-  const btn = $('addBtn'), out = $('addOut');
-  btn.disabled = true;
-  const steps = mode === 'question' ? STEPS_Q : STEPS_T; let si = 0;
-  out.innerHTML = `<div class="report"><p class="thinking" id="stepTxt">${steps[0]}</p></div>`;
-  const timer = setInterval(() => { si = Math.min(si + 1, steps.length - 1); const el = $('stepTxt'); if (el) el.textContent = steps[si]; }, 6000);
-  try {
-    const d = await api('submit', mode === 'question' ? { mode, text, answerKey: $('answerKey').value } : { mode, text, level: genLevel });
-    out.innerHTML = d.mode === 'topic' ? topicReport(d) : questionReport(d);
-    if (d.mode === 'question' && d.accepted) {
-      $('addText').value = ''; $('answerKey').value = '';
-      const v = $('varLine');
-      api('variations', { id: d.question.id })
-        .then(r => { v.textContent = r.saved ? `${r.saved} fresh-number variation${r.saved > 1 ? 's' : ''} added to the bank too.` : (r.note || 'No variations passed the checks this time.'); })
-        .catch(err => { v.textContent = err.message; });
-      $('practiseIt').onclick = () => startPractice(d.question.topic, d.question.level);
-    }
-    if (d.mode === 'topic' && d.saved.length) { $('addText').value = ''; $('practiseIt').onclick = () => startPractice(d.topic, d.level); }
-    loadTopics();
-  } catch (e) { out.innerHTML = ''; $('addErr').textContent = e.message; }
-  finally { clearInterval(timer); btn.disabled = false; }
-};
-
-function questionReport(d) {
-  const r = d.report || {};
-  const q = r.quality || {};
-  const bar = (label, v) => v == null ? '' : `<div class="qbar"><span>${label}</span><span class="track"><i style="width:${Math.max(0, Math.min(10, v)) * 10}%"></i></span><b>${v}</b></div>`;
-  const keyNote = r.visitorAnswerMatches === false ? `<p class="err">Your answer key doesn't match what the AI got (${esc(r.answerText)}). Double-check the solution below.</p>` : '';
-  return `<div class="report">
-    <span class="stamp ${d.accepted ? 'ok' : 'no'}">${d.accepted ? 'Added to the bank' : 'Not added'}</span>
-    ${d.accepted ? '' : `<p><b>Why:</b> ${esc(d.reason)}</p>`}
-    ${keyNote}
-    <dl class="facts">
-      ${r.difficulty ? `<dt>Difficulty</dt><dd>Level ${r.difficulty} of 10, ${esc(LEVELS[r.difficulty - 1])}. <span style="font-weight:400;color:var(--pencil)">${esc(r.difficultyReason)}</span></dd>` : ''}
-      ${r.topic ? `<dt>Topic</dt><dd>${esc(r.topic)}${r.subtopic ? `, ${esc(r.subtopic)}` : ''}</dd>` : ''}
-      ${r.answerText ? `<dt>Answer</dt><dd>${esc(r.answerText)}</dd>` : ''}
-      ${r.qualityOverall ? `<dt>Quality</dt><dd>${r.qualityOverall} / 10</dd>` : ''}
-    </dl>
-    <div class="qbars">${bar('Clarity', q.clarity)}${bar('Correctness', q.correctness)}${bar('CAT relevance', q.catRelevance)}${bar('Concept depth', q.conceptDepth)}</div>
-    ${r.qualityNotes ? `<p style="color:var(--pencil)">${esc(r.qualityNotes)}</p>` : ''}
-    ${r.solution && r.solution.length ? `<div class="sol"><h3>How the AI solved it</h3><ol>${r.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : ''}
-    ${d.accepted ? `<p class="thinking" id="varLine" style="font-size:1.3rem;margin-top:14px">Writing fresh-number variations…</p>
-      <div class="row"><button class="btn" id="practiseIt">Practise level ${r.difficulty} ${esc(r.topic)}</button></div>` : ''}
-  </div>`;
-}
-
-function topicReport(d) {
-  if (!d.saved.length) return `<div class="report"><span class="stamp no">Nothing added</span><p>None of the ${d.rejected} questions passed the independent re-solve check. Try again, or try a different level.</p></div>`;
-  return `<div class="report"><span class="stamp ok">${d.saved.length} added</span>
-    <p>New ${esc(d.topic)} questions at level ${d.level}${d.rejected ? `. ${d.rejected} more failed the independent re-solve and were thrown out` : ''}.</p>
-    <ul class="mini">${d.saved.map(q => `<li>${esc(q.text)}</li>`).join('')}</ul>
-    <div class="row"><button class="btn" id="practiseIt">Practise these</button></div></div>`;
 }
 </script>
 </body>
