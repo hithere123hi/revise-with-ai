@@ -146,6 +146,12 @@ textarea{min-height:150px;resize:vertical;line-height:1.5}
 .sub{color:var(--pencil);font-size:.95rem;margin:-6px 0 14px}
 .badge{margin-top:10px;font-size:.88rem;color:var(--pencil)}
 .badge.ok{color:var(--green)} .badge.no{color:var(--red)}
+.stock{margin-top:14px;font-size:.9rem;color:var(--pencil)}
+.stock .cells{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;margin:6px 0 4px}
+.stock .cell{border:1.5px solid var(--ink);border-radius:3px;height:26px;display:grid;place-items:center;font-size:.75rem;font-weight:700;color:var(--ink);background:var(--sheet)}
+.stock .cell.some{background:color-mix(in srgb,var(--hl) 45%,var(--sheet))}
+.stock .cell.full{background:var(--hl);color:var(--hl-ink)}
+.stock .cell.busy{outline:2px dashed var(--ink);outline-offset:1px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:560px){.row2{grid-template-columns:1fr}}
 </style>
@@ -295,7 +301,8 @@ $('solveBtn').onclick = async () => {
       const setLvl = makeRuler($('ctaRuler'), $('ctaDesc'), d.report.difficulty || 5, v => upload.chosen = v);
       $('ctaBtn').onclick = () => startPractice({ topic: d.report.topic, pattern: d.report.pattern, level: upload.chosen, exampleId: d.id });
       renderUpload();
-      if (d.status === 'pending') verifyUpload(d.id);
+      const after = d.status === 'pending' ? verifyUpload(d.id) : Promise.resolve();
+      if (d.report.pattern) after.finally(() => buildLadder(d.report.pattern, d.report.difficulty || 5, d.id));
     }
   } catch (e) { out.innerHTML = ''; $('upErr').textContent = e.message; }
   finally { clearInterval(timer); btn.disabled = false; }
@@ -314,6 +321,7 @@ function reportCard(d) {
   if (!d.ok) return `<div class="report"><span class="stamp no">Can't use this one</span><p><b>Why:</b> ${esc(d.reason)}</p>${facts}${sol}</div>`;
   return `<div class="report"><span class="stamp ok">Solved</span>${keyNote}${facts}${sol}
     <div class="vbox" id="vbox"></div>
+    ${r.pattern ? `<div class="stock" id="stockBox"></div>` : ''}
     ${r.pattern ? `<div class="practice-cta">
       <h3>Practise more “${esc(r.pattern)}” questions</h3>
       <p>Pick a level. We use verified questions of this type from the bank, and write new ones at your level when we run out.</p>
@@ -346,6 +354,48 @@ function renderUpload() {
     badge.textContent = `Your question: ${t.title.replace(/…$/, '')}${t.cls ? '' : '…'}`;
   } else badge.hidden = true;
 }
+/* ---------- Writing questions ahead of time ----------
+   After an upload, fill every level of that question type (nearest levels first), one small job at a time.
+   Students can practise meanwhile; anything not ready yet is served from the nearest level. */
+let ladder = null;
+function renderLadderStock() {
+  const box = $('stockBox'); if (!box || !ladder) return;
+  const target = 3, c = ladder.counts || Array(10).fill(0);
+  box.innerHTML = `<b style="color:var(--ink)">Practice set for this type</b>
+    <div class="cells">${c.map((n, i) => `<div class="cell ${n >= target ? 'full' : n ? 'some' : ''} ${ladder.busy === i + 1 ? 'busy' : ''}" title="Level ${i + 1}: ${n} ready">${i + 1}</div>`).join('')}</div>
+    ${ladder.note ? esc(ladder.note) : (ladder.done ? 'Every level has questions ready.' : `Writing level ${ladder.busy || '…'} questions in the background. You can start practising now.`)}`;
+}
+async function buildLadder(pattern, around, exampleId) {
+  ladder = { pattern, counts: null, busy: around, done: false, note: '' };
+  renderLadderStock();
+  for (let i = 0, waits = 0; i < 16 && ladder && ladder.pattern === pattern; i++) {
+    try {
+      const r = await api('stock', { pattern, around, exampleId });
+      if (!ladder || ladder.pattern !== pattern) return;
+      if (r.counts) ladder.counts = r.counts;
+      if (r.done) { ladder.done = true; ladder.busy = null; break; }
+      if (r.throttled === 'busy' && waits < 8) { waits++; ladder.note = 'Waiting a moment for the AI…'; renderLadderStock(); ladder.note = ''; await new Promise(res => setTimeout(res, 25000)); continue; }
+      if (r.throttled) { ladder.busy = null; ladder.note = 'The remaining levels will be filled later by the site.'; break; }
+      const next = (ladder.counts || []).map((n, k) => ({ L: k + 1, n })).filter(x => x.n < 3)
+        .sort((a, b) => Math.abs(a.L - around) - Math.abs(b.L - around))[0];
+      ladder.busy = next ? next.L : null;
+    } catch (e) { if (ladder) { ladder.busy = null; ladder.note = 'Paused (the AI is busy). The site will finish this later.'; } break; }
+    renderLadderStock();
+  }
+  if (ladder && ladder.pattern === pattern) { ladder.busy = null; renderLadderStock(); }
+}
+
+// While anyone has the site open, quietly fill the biggest gap in the bank every minute or so.
+(function backgroundHelper() {
+  let runs = 0;
+  const tick = async () => {
+    if (runs >= 6 || document.hidden || (ladder && ladder.busy)) return;
+    runs++;
+    try { const r = await api('stock', {}); if (r.done || r.throttled === 'budget' || r.throttled === 'ip') runs = 99; } catch { runs += 2; }
+  };
+  setTimeout(() => { tick(); setInterval(tick, 60000); }, 30000);
+})();
+
 async function verifyUpload(id) {
   try {
     const v = await api('verify', { id });
@@ -373,7 +423,7 @@ $('backBtn').onclick = () => { S = null; $('practice').hidden = true; $('home').
 
 function startPractice({ topic, pattern, level, exampleId }) {
   S = { topic: topic || 'all', pattern: pattern || null, exampleId: exampleId || null, level, startLevel: level,
-        streak: 0, misses: 0, n: 0, right: 0, seen: exampleId ? [exampleId] : [], queue: [], generating: {}, refilled: {}, q: null, answered: false };
+        streak: 0, misses: 0, n: 0, right: 0, seen: exampleId ? [exampleId] : [], queue: [], generating: {}, refilled: {}, remaining: {}, q: null, answered: false };
   $('home').hidden = true; $('practice').hidden = false;
   $('pTitle').textContent = S.pattern || (S.topic === 'all' ? 'All topics' : S.topic);
   $('pSub').textContent = S.pattern ? `${S.topic} · same question type, your choice of level` : 'Mixed question types';
@@ -400,6 +450,12 @@ function generateFor(level) {
   }
   return S.generating[level];
 }
+// Ask the AI for new questions only when the bank is nearly out at this level (saves the free AI quota).
+function needMore(level) {
+  if (!S || !S.pattern) return false;
+  if (S.queue.some(q => q.level === level && !S.seen.includes(q.id))) return false;
+  return S.remaining[level] !== undefined && S.remaining[level] < 2;
+}
 function takeFromQueue() {
   const i = S.queue.findIndex(q => q.level === S.level && !S.seen.includes(q.id));
   return i >= 0 ? S.queue.splice(i, 1)[0] : null;
@@ -413,15 +469,17 @@ async function nextQuestion() {
   S.answered = false;
   const sheet = $('sheet'), my = S;
   const queued = takeFromQueue();
-  if (queued) { serve(queued); if (S.pattern && !S.queue.some(q => q.level === S.level)) generateFor(S.level)?.catch(() => {}); return; }
+  if (queued) { serve(queued); if (needMore(S.level)) generateFor(S.level)?.catch(() => {}); return; }
   sheet.innerHTML = `<p class="thinking">Fetching a level ${S.level} question…</p>`;
   try {
     const qs = new URLSearchParams({ level: S.level, topic: S.pattern ? 'all' : S.topic, pattern: S.pattern || '', seen: S.seen.join(',') });
     const d = await api('next?' + qs);
     if (S !== my) return;
+    S.remaining[S.level] = Math.max(0, d.remainingAtLevel - (d.question && d.exact ? 1 : 0));
     if (d.question) {
-      serve(d.question, d.exact ? '' : ` (closest available to level ${S.level})`);
-      if (S.pattern && d.remainingAtLevel < 2) generateFor(S.level)?.catch(() => {});   // prepare the next ones early
+      serve(d.question, d.exact ? '' : ` (level ${S.level} questions are being written; this is the closest ready level)`);
+      if (S.pattern && !d.exact) generateFor(S.level)?.catch(() => {});      // fill the empty level in the background
+      else if (needMore(S.level)) generateFor(S.level)?.catch(() => {});      // prepare the next ones early
       if (!S.pattern && d.low && !S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
       return;
     }
@@ -465,7 +523,8 @@ function renderQuestion() {
       answer(Math.abs(v - q.answer) <= Math.max(0.011, Math.abs(q.answer) * 1e-4));
     };
     $('submit').onclick = go;
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    // preventDefault stops the same Enter press from also clicking the 'Next question' button that gets focus
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
     if (matchMedia('(pointer:fine)').matches) inp.focus();
   }
 }
@@ -486,7 +545,7 @@ function answer(ok, btn) {
     if (S.misses >= 2 && S.level > 1) { S.level--; S.misses = 0; flash = { up: false, text: `Two misses in a row, so we're dropping to level ${S.level} for a bit.` }; }
   }
   renderLadder();
-  if (S.pattern && !S.queue.some(x => x.level === S.level)) generateFor(S.level)?.catch(() => {});   // get the next level ready
+  if (needMore(S.level)) generateFor(S.level)?.catch(() => {});   // only when this level is nearly out
   if (q.type === 'mcq') {
     $('sheet').querySelectorAll('.opt').forEach((b, i) => { b.setAttribute('aria-disabled', 'true'); b.tabIndex = -1; if (i === q.correctIndex) b.classList.add('right'); });
     if (!ok && btn) btn.classList.add('wrong');
@@ -496,7 +555,8 @@ function answer(ok, btn) {
     <div class="sol"><h3>Solution</h3><ol>${q.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>
     ${flash ? `<div class="flash ${flash.up ? '' : 'down'}">${esc(flash.text)}</div>` : ''}
     <div class="row"><button class="btn" id="nextBtn">${mastered ? 'See result' : 'Next question'}</button><button class="linkish" id="flagBtn">Report a problem with this question</button></div>`;
-  $('nextBtn').onclick = mastered ? showMastered : nextQuestion;
+  const shownAt = Date.now();   // ignore a stray click/Enter in the first moment so the solution can't be skipped by accident
+  $('nextBtn').onclick = () => { if (Date.now() - shownAt < 600) return; (mastered ? showMastered : nextQuestion)(); };
   $('flagBtn').onclick = async e => { e.target.disabled = true; try { await api('flag', { id: q.id }); e.target.textContent = 'Reported. Thanks.'; } catch (err) { e.target.textContent = err.message; } };
   $('nextBtn').focus({ preventScroll: true });
   fb.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
