@@ -12,7 +12,7 @@ binding = "AI"
 [vars]
 GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_FALLBACK_MODEL = "gemini-3.7-flash,gemini-3.5-flash,gemini-flash-lite-latest"
-DAILY_AI_LIMIT = "400"              # AI calls per day; keep under your free-tier daily cap
+DAILY_AI_LIMIT = "1500"              # AI calls per day; keep under your free-tier daily cap
 MIN_QUALITY = "6"                   # questions scoring below this (out of 10) are rejected
 SUBMITS_PER_HOUR = "10"             # per visitor
 MAX_VARIATIONS = "6"                # per original question
