@@ -301,8 +301,8 @@ $('solveBtn').onclick = async () => {
       const setLvl = makeRuler($('ctaRuler'), $('ctaDesc'), d.report.difficulty || 5, v => upload.chosen = v);
       $('ctaBtn').onclick = () => startPractice({ topic: d.report.topic, pattern: d.report.pattern, level: upload.chosen, exampleId: d.id });
       renderUpload();
-      const after = d.status === 'pending' ? verifyUpload(d.id) : Promise.resolve();
-      if (d.report.pattern) after.finally(() => buildLadder(d.report.pattern, d.report.difficulty || 5, d.id));
+      if (d.status === 'pending') verifyUpload(d.id);
+      if (d.report.pattern) buildLadder(d.report.pattern, d.report.difficulty || 5, d.id);   // start right away, own level first
     }
   } catch (e) { out.innerHTML = ''; $('upErr').textContent = e.message; }
   finally { clearInterval(timer); btn.disabled = false; }
@@ -463,7 +463,8 @@ function needMore(level) {
   return S.remaining[level] !== undefined && S.remaining[level] < 2;
 }
 function takeFromQueue() {
-  const i = S.queue.findIndex(q => q.level === S.level && !S.seen.includes(q.id));
+  let i = S.queue.findIndex(q => q.level === S.level && !S.seen.includes(q.id));
+  if (i < 0 && S.pattern) i = S.queue.findIndex(q => Math.abs(q.level - S.level) <= 1 && !S.seen.includes(q.id));
   return i >= 0 ? S.queue.splice(i, 1)[0] : null;
 }
 function serve(q, note) {
@@ -482,22 +483,31 @@ async function nextQuestion() {
     const d = await api('next?' + qs);
     if (S !== my) return;
     S.remaining[S.level] = Math.max(0, d.remainingAtLevel - (d.question && d.exact ? 1 : 0));
-    if (d.question) {
-      serve(d.question, d.exact ? '' : ` (level ${S.level} questions are being written; this is the closest ready level)`);
+    // Never drop more than one level in type practice: if only far-off levels are ready, write the right level instead.
+    const gap = d.question ? Math.abs(d.servedLevel - S.level) : 99;
+    if (d.question && (gap <= 1 || !S.pattern)) {
+      serve(d.question, d.exact ? '' : `Level ${S.level} questions of this type are still being written, so this one is level ${d.servedLevel}.`);
       if (S.pattern && !d.exact) generateFor(S.level)?.catch(() => {});      // fill the empty level in the background
       else if (needMore(S.level)) generateFor(S.level)?.catch(() => {});      // prepare the next ones early
       if (!S.pattern && d.low && !S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
       return;
     }
+    S.fallback = S.pattern && d.question ? d.question : null;              // closest ready level, offered as an option
     if (!S.pattern) {
       sheet.innerHTML = `<p class="mark no">No new questions left near level ${S.level} yet.</p><p>New ones are being written. Check again in a minute.</p><div class="row"><button class="btn" id="retry">Check again</button></div>`;
       $('retry').onclick = nextQuestion;
       if (!S.refilled[S.level]) { S.refilled[S.level] = true; api('refill', { level: S.level, topic: S.topic }).catch(() => {}); }
       return;
     }
-    sheet.innerHTML = `<p class="thinking">Writing a new level ${S.level} “${esc(S.pattern)}” question for you…</p><p style="color:var(--pencil)">Each one is solved again independently before you see it. Usually 20 to 40 seconds.</p>`;
+    sheet.innerHTML = `<p class="thinking">Writing level ${S.level} “${esc(S.pattern)}” questions for you…</p>
+      <p style="color:var(--pencil)">This type has no level ${S.level} questions yet, so the AI is writing some and checking each one independently. Usually 20 to 40 seconds; after that they are instant for everyone.</p>
+      ${S.fallback ? `<div class="row"><button class="btn ghost" id="useFallback">Practise level ${S.fallback.level} meanwhile</button></div>` : ''}`;
+    if (S.fallback) $('useFallback').onclick = () => {
+      const f = S.fallback; S.fallback = null; S.level = f.level; S.streak = 0; S.misses = 0; S.skipWait = true; renderLadder(); serve(f);
+    };
     const g = await generateFor(S.level);
     if (S !== my) return;
+    if (S.skipWait) { S.skipWait = false; return; }                         // the student chose the ready level meanwhile
     const q = takeFromQueue();
     if (q) return serve(q);
     throw new Error(g && g.rejected ? 'The new questions failed our accuracy check, so we threw them away.' : 'Could not write a new question this time.');
@@ -515,7 +525,8 @@ function renderQuestion() {
   const solved = q.attempts >= 5 ? `, ${Math.round(100 * q.correctCount / q.attempts)}% of solvers got it` : '';
   const kind = q.type === 'mcq' ? 'MCQ' : 'TITA, type the answer';
   let html = `<span class="qn">${S.n + 1}</span>
-    <p class="qmeta">${esc(q.pattern || q.topic)}, level ${q.level}${esc(S.servedNote)}. ${kind}${solved}</p>
+    ${S.servedNote ? `<div class="flash down" style="margin:0 0 12px">${esc(S.servedNote)}</div>` : ''}
+    <p class="qmeta">${esc(q.pattern || q.topic)}, level ${q.level}. ${kind}${solved}</p>
     <p class="qtext">${esc(q.text)}</p>`;
   if (q.type === 'mcq') html += `<div class="opts" role="group" aria-label="Options">${q.options.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
   else html += `<div class="tita"><label for="ans" class="sr">Your answer</label><input id="ans" inputmode="decimal" autocomplete="off" placeholder="Your answer"><button class="btn" id="submit">Check</button></div><p class="err" id="titaNote"></p>`;

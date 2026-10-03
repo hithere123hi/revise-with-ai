@@ -24,6 +24,8 @@ export async function onRequestGet({ request, env }) {
     const made = await fromTemplates(env, pattern, level, 2);
     if (made.length) row = await env.DB.prepare('SELECT * FROM questions WHERE id = ?').bind(made[0].id).first();
   }
+  // Look outward for the nearest ready level. The page serves it directly only if it is one level away;
+  // further than that, it offers it as an option while the right level is written.
   if (!row) {
     for (const d of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5]) {
       const L = level + d;

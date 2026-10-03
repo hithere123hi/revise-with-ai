@@ -121,12 +121,14 @@ measured by their writer and their checker, and stored at the level they actuall
 
 ## The question bank
 
-- **15,588 starter questions** across all 8 Arithmetic topics and **81 question types**, levels 1 to 8:
-  the original 586 plus 15,002 generated from 151 verified variants (321 stories). Every question has a
-  different story or different numbers from every other; answers were computed by formula and each variant was
-  checked against an independent method (simulation, brute force or a different derivation) on 300 random draws,
-  and the site's JavaScript calculator was cross-checked against the generator on 9,010 answers (0 mismatches).
-- **321 verified templates** ship with the bank, so the site can make unlimited further questions of every type
+- **21,128 starter questions** across all 8 Arithmetic topics and **81 question types**, levels 1 to 8, of which
+  **8,154 are CAT level (6 to 8)** and 51 types reach level 6+. Built from 212 verified variants: every question
+  differs from every other in story or numbers; answers come from formulas, and every variant was checked against an
+  independent method (simulation, brute force or a different derivation) on 300 random draws. The site's JavaScript
+  calculator was cross-checked against the generator on 11,600+ answers (0 mismatches).
+- Basic types (e.g. "Dividing in a ratio", "Basic average") stop at low levels on purpose: CAT does not ask them at
+  level 7. If someone practises such a type at a high level, the AI writes a template for it on demand.
+- **389 verified templates** ship with the bank, so the site can make unlimited further questions of every type
   at zero AI cost.
 - The bank lives in `public/seed/` as plain JSON (16 files + `templates.json` + `manifest.json`).
   `/setup.html` loads it into D1 in small batches (free D1 allows ~50 queries per request and 100,000 row writes a
