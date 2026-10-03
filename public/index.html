@@ -421,9 +421,15 @@ async function pollUpload(id, tries = 0) {
 let S = null;
 $('backBtn').onclick = () => { S = null; $('practice').hidden = true; $('home').hidden = false; loadTopics(); window.scrollTo(0, 0); };
 
+// Questions this browser has already seen (kept between visits so practice never repeats).
+const SEEN_KEY = 'rwa_seen_v1';
+function loadSeen() { try { const a = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); return Array.isArray(a) ? a.filter(Number.isFinite) : []; } catch { return []; } }
+function rememberSeen(id) { try { const a = loadSeen().filter(x => x !== id); a.push(id); localStorage.setItem(SEEN_KEY, JSON.stringify(a.slice(-2000))); } catch {} }
+
 function startPractice({ topic, pattern, level, exampleId }) {
+  const past = loadSeen();
   S = { topic: topic || 'all', pattern: pattern || null, exampleId: exampleId || null, level, startLevel: level,
-        streak: 0, misses: 0, n: 0, right: 0, seen: exampleId ? [exampleId] : [], queue: [], generating: {}, refilled: {}, remaining: {}, q: null, answered: false };
+        streak: 0, misses: 0, n: 0, right: 0, seen: [...past.slice(-299), ...(exampleId ? [exampleId] : [])], queue: [], generating: {}, refilled: {}, remaining: {}, q: null, answered: false };
   $('home').hidden = true; $('practice').hidden = false;
   $('pTitle').textContent = S.pattern || (S.topic === 'all' ? 'All topics' : S.topic);
   $('pSub').textContent = S.pattern ? `${S.topic} · same question type, your choice of level` : 'Mixed question types';
@@ -461,7 +467,7 @@ function takeFromQueue() {
   return i >= 0 ? S.queue.splice(i, 1)[0] : null;
 }
 function serve(q, note) {
-  S.q = q; S.seen.push(q.id); S.servedNote = note || '';
+  S.q = q; S.seen.push(q.id); rememberSeen(q.id); S.servedNote = note || '';
   renderQuestion();
 }
 
@@ -472,7 +478,7 @@ async function nextQuestion() {
   if (queued) { serve(queued); if (needMore(S.level)) generateFor(S.level)?.catch(() => {}); return; }
   sheet.innerHTML = `<p class="thinking">Fetching a level ${S.level} question…</p>`;
   try {
-    const qs = new URLSearchParams({ level: S.level, topic: S.pattern ? 'all' : S.topic, pattern: S.pattern || '', seen: S.seen.join(',') });
+    const qs = new URLSearchParams({ level: S.level, topic: S.pattern ? 'all' : S.topic, pattern: S.pattern || '', seen: S.seen.slice(-300).join(',') });
     const d = await api('next?' + qs);
     if (S !== my) return;
     S.remaining[S.level] = Math.max(0, d.remainingAtLevel - (d.question && d.exact ? 1 : 0));

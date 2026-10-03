@@ -45,7 +45,7 @@ Menu names on these sites shift now and then; if a label differs slightly, look 
 1. In Cloudflare, go to **Workers & Pages → Create → Pages → Connect to Git**.
 2. Authorise GitHub and pick the `revise-with-ai` repo.
 3. Build settings: **Framework preset: None**, **Build command: leave empty**, **Build output directory: `public`**.
-4. Click **Save and Deploy**. The first deploy takes a minute or two. 
+4. Click **Save and Deploy**. The first deploy takes a minute or two.
 
 ### 6. Add your two secrets
 1. Open the Pages project → **Settings → Variables and Secrets**.
@@ -118,6 +118,21 @@ measured by their writer and their checker, and stored at the level they actuall
 **Adaptive levels**: four correct in a row moves up a level; two misses in a row moves down.
 
 **Quality control**: solve rates are shown after 5 attempts, and three "Report a problem" clicks hide a question.
+
+## The question bank
+
+- **15,588 starter questions** across all 8 Arithmetic topics and **81 question types**, levels 1 to 8:
+  the original 586 plus 15,002 generated from 151 verified variants (321 stories). Every question has a
+  different story or different numbers from every other; answers were computed by formula and each variant was
+  checked against an independent method (simulation, brute force or a different derivation) on 300 random draws,
+  and the site's JavaScript calculator was cross-checked against the generator on 9,010 answers (0 mismatches).
+- **321 verified templates** ship with the bank, so the site can make unlimited further questions of every type
+  at zero AI cost.
+- The bank lives in `public/seed/` as plain JSON (16 files + `templates.json` + `manifest.json`).
+  `/setup.html` loads it into D1 in small batches (free D1 allows ~50 queries per request and 100,000 row writes a
+  day; a full load uses roughly 60,000). If it stops at the daily limit, run it again the next day: it remembers
+  which files are done and skips questions already present.
+- Each browser remembers the questions it has seen (last 2,000), so practice does not repeat across visits.
 
 ## How the site scales without running out of AI
 
@@ -220,7 +235,7 @@ lib/core.js             AI prompts, judging, difficulty rubric, duplicate checks
 lib/patterns.js         the catalogue of 74 question types
 lib/templates.js        safe formula calculator and template engine
 lib/schema.js           database tables and upgrades (used by setup)
-lib/seed-data.js        586 starter questions (used by setup)
-db/*.sql                the same schema and seed as SQL, for command-line use
+public/seed/            the question bank and templates loaded by /setup.html
+db/schema.sql           the database tables as SQL
 wrangler.toml           Cloudflare config and settings
 ```

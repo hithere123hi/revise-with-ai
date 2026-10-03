@@ -1,20 +1,16 @@
-import { json, TOPICS } from '../../lib/core.js';
+import { json, TOPICS, bankSummary } from '../../lib/core.js';
 import { PATTERNS } from '../../lib/patterns.js';
 
-// GET /api/topics -> topics with question counts per level, and the question types in each topic
-export async function onRequestGet({ request, env }) {
-  const cache = caches.default, key = new Request(new URL('/api/topics?v=1', request.url).toString());
-  const hit = await cache.match(key);
-  if (hit) return hit;
-  const { results } = await env.DB.prepare(
-    "SELECT topic, pattern, level, COUNT(*) AS n FROM questions WHERE hidden = 0 AND status = 'live' GROUP BY topic, pattern, level").all();
+// GET /api/topics -> topics with question counts per level, and the question types in each topic.
+// Uses the hourly bank summary, so it stays cheap however large the bank grows.
+export async function onRequestGet({ env }) {
   const byTopic = {}; let total = 0;
-  for (const r of results) {
-    const t = (byTopic[r.topic] ||= { levels: Array(10).fill(0), patterns: {} });
-    t.levels[r.level - 1] += r.n; total += r.n;
-    if (r.pattern) t.patterns[r.pattern] = (t.patterns[r.pattern] || 0) + r.n;
+  for (const [topic, pattern, level, n] of (await bankSummary(env)).rows) {
+    const t = (byTopic[topic] ||= { levels: Array(10).fill(0), patterns: {} });
+    t.levels[level - 1] += n; total += n;
+    if (pattern) t.patterns[pattern] = (t.patterns[pattern] || 0) + n;
   }
-  const res = json({
+  return json({
     total,
     topics: TOPICS.map(name => {
       const t = byTopic[name] || { levels: Array(10).fill(0), patterns: {} };
@@ -24,7 +20,4 @@ export async function onRequestGet({ request, env }) {
       return { name, levels: t.levels, count: t.levels.reduce((a, b) => a + b, 0), patterns };
     })
   });
-  res.headers.set('cache-control', 'public, max-age=60');
-  await cache.put(key, res.clone());
-  return res;
 }

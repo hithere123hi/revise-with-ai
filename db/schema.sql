@@ -29,9 +29,6 @@ CREATE TABLE IF NOT EXISTS questions (
   template_id     INTEGER,                      -- template this question was generated from, if any
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IF NOT EXISTS idx_q_serve ON questions (hidden, level, topic);
-CREATE INDEX IF NOT EXISTS idx_q_topic ON questions (topic, hidden);
-CREATE INDEX IF NOT EXISTS idx_q_pattern ON questions (status, pattern, level);
 CREATE INDEX IF NOT EXISTS idx_q_rnd ON questions (status, pattern, level, rnd);
 CREATE INDEX IF NOT EXISTS idx_q_rnd_level ON questions (status, level, rnd);
 

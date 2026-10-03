@@ -61,9 +61,11 @@ const numbersIn = t => (String(t).match(/\d+(?:\.\d+)?/g) || []).map(Number).sor
 const wordSet = t => new Set(normText(t).split(' ').filter(Boolean));
 
 async function findRepeat(env, text) {
-  const cached = await env.DB.prepare(
-    "SELECT q.* FROM upload_cache c JOIN questions q ON q.id = c.question_id WHERE c.hash = ? AND q.status != 'rejected'").bind(await hashText(text)).first();
-  if (cached) return cached;
+  try {   // the cache table appears once /setup.html has been run; until then, just skip it
+    const cached = await env.DB.prepare(
+      "SELECT q.* FROM upload_cache c JOIN questions q ON q.id = c.question_id WHERE c.hash = ? AND q.status != 'rejected'").bind(await hashText(text)).first();
+    if (cached) return cached;
+  } catch {}
   const exact = await env.DB.prepare("SELECT * FROM questions WHERE norm_hash = ? AND status != 'rejected'").bind(await hashText(text)).first();
   if (exact) return exact;
   const words = [...new Set(normText(text).split(' ').filter(w => w.length >= 3 && /^[a-z]+$/.test(w)))].slice(0, 25);
