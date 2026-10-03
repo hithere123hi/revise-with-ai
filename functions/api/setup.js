@@ -1,5 +1,6 @@
-import { json, fail, readBody } from '../../lib/core.js';
-import { SCHEMA, MIGRATIONS } from '../../lib/schema.js';
+import { json, fail, readBody, pickPattern } from '../../lib/core.js';
+import { PATTERNS } from '../../lib/patterns.js';
+import { SCHEMA, MIGRATIONS, AFTER_LOAD } from '../../lib/schema.js';
 import { SEED } from '../../lib/seed-data.js';
 
 // POST /api/setup {token, offset} -> creates tables, then loads starter questions in chunks.
@@ -24,15 +25,20 @@ export async function onRequestPost({ request, env }) {
         env.DB.prepare("INSERT INTO meta (key, value) VALUES ('regrade_v2', datetime('now'))")
       ]);
     }
-    return json({ next: 0, done: false, seedSize: SEED.length, schema: true });
+    // Repair question types saved with a copied description, e.g. "Alternate days (workers working on...".
+    const cat = Object.fromEntries(Object.entries(PATTERNS).map(([k, ps]) => [k, ps.map(p => p[0])]));
+    const { results } = await env.DB.prepare("SELECT DISTINCT topic, pattern FROM questions WHERE pattern IS NOT NULL").all();
+    const fixes = results.map(r => ({ ...r, fixed: pickPattern(r.pattern, r.topic, cat) })).filter(r => r.fixed && r.fixed !== r.pattern).slice(0, 40);
+    if (fixes.length) await env.DB.batch(fixes.map(r => env.DB.prepare('UPDATE questions SET pattern = ?1 WHERE pattern = ?2').bind(r.fixed, r.pattern)));
+    return json({ next: 0, done: false, seedSize: SEED.length, schema: true, repairedTypes: fixes.length });
   }
   const offset = Math.max(0, parseInt(b.offset) || 0);
 
   const chunk = SEED.slice(offset, offset + 20);
   if (chunk.length) {
     const stmt = env.DB.prepare(`INSERT OR IGNORE INTO questions
-      (text, norm_hash, topic, level, answer, answer_text, distractors, solution, level_reason, source, pattern)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`);
+      (text, norm_hash, topic, level, answer, answer_text, distractors, solution, level_reason, source, pattern, rnd)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, abs(random()) / 9223372036854775807.0)`);
     // Starter questions already in the database get their latest type and measured level.
     const sync = env.DB.prepare(`UPDATE questions SET pattern = ?1, level = ?3, level_reason = ?4
       WHERE norm_hash = ?2 AND source IN ('seed', 'curated')`);
@@ -42,6 +48,7 @@ export async function onRequestPost({ request, env }) {
     ]));
   }
   const next = offset + chunk.length;
+  if (next >= SEED.length) for (const st of AFTER_LOAD) { try { await env.DB.prepare(st).run(); } catch (e) { console.error('setup step failed', st, e.message); } }
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM questions').first();
   return json({ next, done: next >= SEED.length, seedSize: SEED.length, questionsInBank: total.n });
 }

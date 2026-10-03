@@ -319,7 +319,7 @@ function reportCard(d) {
     </dl>`;
   const sol = r.solution && r.solution.length ? `<div class="sol"><h3>Solution</h3><ol>${r.solution.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>` : '';
   if (!d.ok) return `<div class="report"><span class="stamp no">Can't use this one</span><p><b>Why:</b> ${esc(d.reason)}</p>${facts}${sol}</div>`;
-  return `<div class="report"><span class="stamp ok">Solved</span>${keyNote}${facts}${sol}
+  return `<div class="report"><span class="stamp ok">${d.cached ? 'Solved before' : 'Solved'}</span>${d.cached ? '<p style="color:var(--pencil)">Someone uploaded this question before, so here is the checked answer instantly.</p>' : ''}${keyNote}${facts}${sol}
     <div class="vbox" id="vbox"></div>
     ${r.pattern ? `<div class="stock" id="stockBox"></div>` : ''}
     ${r.pattern ? `<div class="practice-cta">

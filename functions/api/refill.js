@@ -1,4 +1,4 @@
-import { json, fail, readBody, take, makeVariations, generateForTopic, verifyQuestion, aiErrorResponse, TOPICS } from '../../lib/core.js';
+import { json, fail, readBody, take, makeVariations, generateForTopic, verifyQuestion, backgroundAllowed, aiErrorResponse, TOPICS } from '../../lib/core.js';
 
 // POST /api/refill {level, topic} -> called when a level is running low; the bank grows itself
 export async function onRequestPost({ request, env }) {
@@ -6,6 +6,7 @@ export async function onRequestPost({ request, env }) {
   const level = Math.min(10, Math.max(1, parseInt(b.level) || 1));
   const topic = TOPICS.includes(b.topic) ? b.topic : 'all';
   if (!(await take(env, 'refill:global', 1, 60))) return json({ started: false, note: 'A refill ran recently.' });
+  if (!(await backgroundAllowed(env))) return json({ started: false, note: 'Saving AI budget for uploads.' });
   try {
     // First, finish any upload whose background check was interrupted (e.g. the student closed the tab).
     const stale = await env.DB.prepare(

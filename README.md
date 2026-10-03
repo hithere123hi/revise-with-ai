@@ -105,9 +105,41 @@ level with one fixed formula, so a "level 6" means the same thing everywhere. Up
 the first solve and by every verification pass (the median wins); AI-written practice questions are
 measured by their writer and their checker, and stored at the level they actually came out at.
 
+**Questions are written ahead of time** (`/api/stock`): students should never wait for the AI.
+- After an upload is verified, the student's browser asks the site to fill every level of that question
+  type, nearest levels first (6, then 5 and 7, then 4 and 8...), until each level has `TARGET_PER_LEVEL`
+  questions (default 3). The upload card shows a 10-cell ladder filling up.
+- While anyone has the site open, their browser quietly fills the most useful gap in the bank about once a
+  minute (popular types and levels 3 to 8 first). Free Cloudflare Pages has no scheduled jobs, so visitors'
+  browsers act as the scheduler. At most `STOCK_PER_MINUTE` fill jobs run per minute across the whole site (default 3).
+- If a level is still empty when a student reaches it, they instantly get the nearest ready level of the
+  same type while that level is written in the background.
+
 **Adaptive levels**: four correct in a row moves up a level; two misses in a row moves down.
 
 **Quality control**: solve rates are shown after 5 attempts, and three "Report a problem" clicks hide a question.
+
+## How the site scales without running out of AI
+
+AI cost grows with **new content**, not with the number of students:
+
+1. **Templates.** When a question type needs more questions at a level, the AI writes a *template* once: the question
+   with blanks for the numbers plus an answer formula. A different model solves 3 filled-in samples blind; if all
+   match, the template is stored. From then on, code fills in fresh numbers for free, instantly, forever
+   (`lib/templates.js`, a small safe calculator, because Cloudflare does not allow running AI-written code).
+   If two questions from a template get reported, the template is retired.
+2. **Practice never uses AI.** Questions come from the bank or from templates in milliseconds.
+3. **Batched checks.** One AI call checks a whole batch of new questions.
+4. **Adaptive verification.** Uploads get 2 independent checks; a 3rd runs only if they disagree.
+5. **Repeat uploads are free.** The same question pasted again (or a near-identical copy with the same numbers)
+   reuses the stored analysis, found through a full-text index.
+6. **Students first.** Background stocking may use only `BACKGROUND_SHARE` of the day's AI budget (default 60%).
+7. **Cheap database reads.** Random picks use an indexed random key and counts stop at 5, so reads per request stay
+   tiny however big the bank grows (free D1 allows 5 million row reads a day).
+
+Rough cost: an upload is 1 to 4 AI calls; a new template is 2 calls and then free. With Gemini, Groq and Mistral on free
+tiers, the site can absorb hundreds of uploads a day, and practice volume is effectively unlimited. If it ever outgrows
+that, the cheapest upgrade is a paid Flash-Lite-class model for the background template writing only.
 
 ## The five AI providers
 
@@ -145,6 +177,9 @@ to set the exact order, e.g. `gemini:gemini-3.8-flash,groq:openai/gpt-oss-120b,c
 | `MIN_QUALITY` | `6` | Minimum quality score (out of 10) to accept a question |
 | `SUBMITS_PER_HOUR` | `10` | Questions or topics one visitor can add per hour |
 | `MAX_VARIATIONS` | `6` | Max variations from one original question |
+| `TARGET_PER_LEVEL` | `3` | Questions of each type kept ready at each level |
+| `BACKGROUND_SHARE` | `0.6` | Share of the daily AI budget background stocking may use |
+| `STOCK_PER_MINUTE` | `3` | Background fill jobs per minute, site-wide |
 | `FLAGS_TO_HIDE` | `3` | Reports before a question is hidden |
 
 **AI usage:** an upload uses 1 call plus `VERIFY_PASSES` (4 in total by default). Each batch of 2 new
@@ -178,9 +213,10 @@ Open http://localhost:8788
 ```
 public/index.html       the site: upload a question, practise by type
 public/setup.html       one-time database setup page
-functions/api/*.js      API: analyze, verify, status, generate, next, topics, refill, attempt, flag, setup
+functions/api/*.js      API: analyze, verify, status, generate, stock, next, topics, refill, attempt, flag, health, setup
 lib/core.js             AI prompts, judging, difficulty rubric, duplicate checks, storage
 lib/patterns.js         the catalogue of 74 question types
+lib/templates.js        safe formula calculator and template engine
 lib/schema.js           database tables and upgrades (used by setup)
 lib/seed-data.js        586 starter questions (used by setup)
 db/*.sql                the same schema and seed as SQL, for command-line use

@@ -25,11 +25,38 @@ CREATE TABLE IF NOT EXISTS questions (
   pattern         TEXT,                         -- question type, e.g. 'Successive percentage change'
   status          TEXT    NOT NULL DEFAULT 'live',  -- pending (being verified) | live | rejected
   checks          TEXT,                         -- JSON summary of the background verification
+  rnd             REAL,                         -- random key for fast indexed random picks
+  template_id     INTEGER,                      -- template this question was generated from, if any
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_q_serve ON questions (hidden, level, topic);
 CREATE INDEX IF NOT EXISTS idx_q_topic ON questions (topic, hidden);
 CREATE INDEX IF NOT EXISTS idx_q_pattern ON questions (status, pattern, level);
+CREATE INDEX IF NOT EXISTS idx_q_rnd ON questions (status, pattern, level, rnd);
+CREATE INDEX IF NOT EXISTS idx_q_rnd_level ON questions (status, level, rnd);
+
+-- AI-written templates: question text with blanks plus an answer formula; code fills in numbers.
+CREATE TABLE IF NOT EXISTS templates (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  pattern    TEXT    NOT NULL,
+  topic      TEXT    NOT NULL,
+  level      INTEGER NOT NULL,
+  body       TEXT    NOT NULL,                    -- JSON template
+  status     TEXT    NOT NULL DEFAULT 'live',
+  made       INTEGER NOT NULL DEFAULT 0,          -- questions generated from it so far
+  source_id  INTEGER,                             -- question it was modelled on
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_t_pattern ON templates (status, pattern, level);
+
+-- Exact repeat uploads (normalised original text -> question), answered with no AI call.
+CREATE TABLE IF NOT EXISTS upload_cache (
+  hash        TEXT PRIMARY KEY,
+  question_id INTEGER NOT NULL
+);
+
+-- Full-text index to recognise repeat uploads without calling the AI.
+CREATE VIRTUAL TABLE IF NOT EXISTS qsearch USING fts5(text);
 
 CREATE TABLE IF NOT EXISTS rate_limits (
   key      TEXT PRIMARY KEY,
