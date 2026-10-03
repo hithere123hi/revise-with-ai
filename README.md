@@ -141,19 +141,21 @@ Rough cost: an upload is 1 to 4 AI calls; a new template is 2 calls and then fre
 tiers, the site can absorb hundreds of uploads a day, and practice volume is effectively unlimited. If it ever outgrows
 that, the cheapest upgrade is a paid Flash-Lite-class model for the background template writing only.
 
-## The five AI providers
+## The AI providers
 
-The site uses up to five free providers in this order, skipping any that are out of quota
+The site works through a chain of free providers in this order, skipping any that are out of quota
 (daily limits: skipped for 3 hours; per-minute limits: a short wait, then the next model):
 
-| # | Provider | Model | How to enable |
-|---|---|---|---|
-| 1 | Google Gemini | gemini-3.8-flash | `GEMINI_API_KEY` secret (aistudio.google.com) |
-| 2 | Groq | openai/gpt-oss-120b | `GROQ_API_KEY` secret (console.groq.com) |
-| 3 | Cerebras | gpt-oss-120b | `CEREBRAS_API_KEY` secret (cloud.cerebras.ai) |
-| 4 | Mistral | mistral-large-latest | `MISTRAL_API_KEY` secret (console.mistral.ai, free "Experiment" plan) |
-| 5 | Google backups | from `GEMINI_FALLBACK_MODEL` | uses the Gemini key |
-| 6 | Cloudflare Workers AI | llama-3.3-70b (last resort) | `[ai] binding = "AI"` in `wrangler.toml`, no key |
+| # | Provider | Default model | Free allowance (Oct 2026, changes often) | How to enable |
+|---|---|---|---|---|
+| 1 | Google Gemini | gemini-3.8-flash | small, per model per day | `GEMINI_API_KEY` (aistudio.google.com) |
+| 2 | Groq | openai/gpt-oss-120b | 30 req/min, token caps per minute and day | `GROQ_API_KEY` (console.groq.com) |
+| 3 | NVIDIA NIM | nvidia/nemotron-3-super-120b-a12b | about 40 req/min; free tier meant for development and testing | `NVIDIA_API_KEY` (build.nvidia.com) |
+| 4 | Cerebras | gpt-oss-120b | free tier has ended; leave unset | `CEREBRAS_API_KEY` |
+| 5 | Mistral | mistral-large-latest | "Experiment" plan, phone verification | `MISTRAL_API_KEY` (console.mistral.ai) |
+| 6 | Google backups | from `GEMINI_FALLBACK_MODEL` | as Gemini | uses the Gemini key |
+| 7 | OpenRouter | openrouter/free | 20 req/min, 50 req/day | `OPENROUTER_API_KEY` (openrouter.ai) |
+| 8 | Cloudflare Workers AI | llama-3.3-70b (last resort) | daily free allocation | `[ai] binding = "AI"` in `wrangler.toml` |
 
 Add secrets in Cloudflare: Pages project › Settings › Variables and Secrets › type *Secret*, then make
 any small commit on GitHub so the site redeploys. Missing keys are simply left out of the chain.
@@ -162,7 +164,7 @@ The three independent verification checks start on different providers, so they 
 **Check the chain any time:** open `/api/health` on your site. It lists every model, whether it is
 ready or resting (and for how long), and today's AI call count.
 
-Optional overrides: `GROQ_MODEL`, `CEREBRAS_MODEL`, `MISTRAL_MODEL`, `CF_AI_MODEL`, or `AI_CHAIN`
+Optional overrides: `GROQ_MODEL`, `NVIDIA_MODEL`, `CEREBRAS_MODEL`, `MISTRAL_MODEL`, `OPENROUTER_MODEL`, `CF_AI_MODEL`, or `AI_CHAIN`
 to set the exact order, e.g. `gemini:gemini-3.8-flash,groq:openai/gpt-oss-120b,cloudflare:@cf/meta/llama-3.3-70b-instruct-fp8-fast`.
 
 ## Settings (in `wrangler.toml`, edit on GitHub)
