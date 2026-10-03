@@ -45,7 +45,7 @@ Menu names on these sites shift now and then; if a label differs slightly, look 
 1. In Cloudflare, go to **Workers & Pages → Create → Pages → Connect to Git**.
 2. Authorise GitHub and pick the `revise-with-ai` repo.
 3. Build settings: **Framework preset: None**, **Build command: leave empty**, **Build output directory: `public`**.
-4. Click **Save and Deploy**. The first deploy takes a minute or two.
+4. Click **Save and Deploy**. The first deploy takes a minute or two. 
 
 ### 6. Add your two secrets
 1. Open the Pages project → **Settings → Variables and Secrets**.
